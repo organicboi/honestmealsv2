@@ -120,3 +120,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom utility classes */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Smooth backdrop blur for glassmorphism */
+  .backdrop-blur-glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+}

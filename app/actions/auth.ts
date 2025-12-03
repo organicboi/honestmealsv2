@@ -28,10 +28,18 @@ export async function signup(formData: FormData) {
     password: formData.get('password') as string,
   };
 
-  const { error } = await supabase.auth.signUp(data);
+  // Sign up the user
+  // The database trigger (handle_new_user) will automatically:
+  // 1. Assign the 'standard_user' role
+  // 2. Create a profile entry
+  const { data: authData, error: signUpError } = await supabase.auth.signUp(data);
 
-  if (error) {
-    return { error: error.message };
+  if (signUpError) {
+    return { error: signUpError.message };
+  }
+
+  if (!authData.user) {
+    return { error: 'Failed to create user account' };
   }
 
   redirect('/');
