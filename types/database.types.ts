@@ -54,6 +54,7 @@ export interface Profile {
   email: string;
   name: string | null;
   weight: number | null;
+  goal_weight: number | null;
   height: number | null;
   age: number | null;
   dietary_preference: string | null;

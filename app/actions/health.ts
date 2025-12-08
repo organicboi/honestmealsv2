@@ -22,6 +22,7 @@ export type HealthDashboardData = {
     current: number
     goal: number | null
     start: number | null
+    height: number | null
   }
   user: {
     name: string
@@ -89,7 +90,7 @@ export async function getHealthDashboardData(): Promise<HealthDashboardData> {
   // 5. Fetch Weight/Profile
   const { data: profile } = await supabase
     .from('profiles')
-    .select('weight, goal_aim, name') // goal_aim might be text, need to check schema for target weight
+    .select('weight, height, goal_aim, name') 
     .eq('id', user.id)
     .maybeSingle()
     
@@ -99,6 +100,25 @@ export async function getHealthDashboardData(): Promise<HealthDashboardData> {
     .select('target_weight')
     .eq('customer_id', user.id)
     .eq('is_active', true)
+    .maybeSingle()
+
+  // 6. Fetch Start Weight (First log)
+  const { data: startWeightLog } = await supabase
+    .from('weight_logs')
+    .select('weight')
+    .eq('user_id', user.id)
+    .order('log_date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  // 7. Fetch Latest Weight (Last log) to ensure we have the most recent data
+  // profiles.weight might be stale if not updated via triggers
+  const { data: latestWeightLog } = await supabase
+    .from('weight_logs')
+    .select('weight')
+    .eq('user_id', user.id)
+    .order('log_date', { ascending: false })
+    .limit(1)
     .maybeSingle()
 
   return {
@@ -129,9 +149,10 @@ export async function getHealthDashboardData(): Promise<HealthDashboardData> {
       longest: streak?.longest_streak || 0,
     },
     weight: {
-      current: profile?.weight || 0,
+      current: latestWeightLog?.weight || profile?.weight || 0,
       goal: nutritionGoals?.target_weight || null,
-      start: null, // Could fetch from first progress photo or history
+      start: startWeightLog?.weight || profile?.weight || 0,
+      height: profile?.height || null,
     },
     user: {
       name: profile?.name || 'User',
@@ -152,6 +173,96 @@ export async function logWater(amount: number) {
     user_id: user.id,
     amount_ml: amount,
   })
+
+  revalidatePath('/health')
+}
+
+export async function updateWaterGoal(goal: number) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  // Check if a goal record exists
+  const { data: existingGoal } = await supabase
+    .from('daily_goals')
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .maybeSingle()
+
+  if (existingGoal) {
+    await supabase
+      .from('daily_goals')
+      .update({ daily_water_goal_ml: goal })
+      .eq('id', existingGoal.id)
+  } else {
+    // Create new goal record if none exists (basic default values for others)
+    await supabase.from('daily_goals').insert({
+      user_id: user.id,
+      daily_water_goal_ml: goal,
+      daily_calorie_goal: 2000, // Default
+      daily_protein_goal: 150, // Default
+      is_active: true
+    })
+  }
+
+  revalidatePath('/health')
+}
+
+export async function getWaterLogs() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  const today = new Date().toISOString().split('T')[0]
+
+  const { data } = await supabase
+    .from('water_logs')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', `${today}T00:00:00`)
+    .lte('created_at', `${today}T23:59:59`)
+    .order('created_at', { ascending: false })
+
+  return data || []
+}
+
+export async function updateWaterLog(id: string, amount: number) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  await supabase
+    .from('water_logs')
+    .update({ amount_ml: amount })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  revalidatePath('/health')
+}
+
+export async function deleteWaterLog(id: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  await supabase
+    .from('water_logs')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
 
   revalidatePath('/health')
 }

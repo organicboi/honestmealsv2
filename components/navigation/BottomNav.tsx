@@ -23,27 +23,27 @@ const baseNavItems: NavItem[] = [
 // Role-specific navigation items (shown in addition to base items)
 const roleSpecificNavItems: Partial<Record<UserRole, NavItem[]>> = {
     admin: [
-        { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-        { label: 'Users', href: '/admin/users', icon: Users },
-        { label: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
-        { label: 'Settings', href: '/admin/settings', icon: Settings },
+        // { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        // { label: 'Users', href: '/admin/users', icon: Users },
+        // { label: 'Analytics', href: '/admin/analytics', icon: TrendingUp },
+        // { label: 'Settings', href: '/admin/settings', icon: Settings },
     ],
     
     trainer: [
-        { label: 'Dashboard', href: '/trainer', icon: LayoutDashboard },
-        { label: 'Clients', href: '/trainer/clients', icon: Users },
+        // { label: 'Dashboard', href: '/trainer', icon: LayoutDashboard },
+        // { label: 'Clients', href: '/trainer/clients', icon: Users },
     ],
     
     gym_franchise: [
-        { label: 'Dashboard', href: '/gym', icon: LayoutDashboard },
-        { label: 'Members', href: '/gym/members', icon: Users },
-        { label: 'Analytics', href: '/gym/analytics', icon: TrendingUp },
+        // { label: 'Dashboard', href: '/gym', icon: LayoutDashboard },
+        // { label: 'Members', href: '/gym/members', icon: Users },
+        // { label: 'Analytics', href: '/gym/analytics', icon: TrendingUp },
     ],
     
     influencer: [
-        { label: 'Dashboard', href: '/influencer', icon: LayoutDashboard },
-        { label: 'Referrals', href: '/influencer/referrals', icon: Users },
-        { label: 'Earnings', href: '/influencer/earnings', icon: TrendingUp },
+        // { label: 'Dashboard', href: '/influencer', icon: LayoutDashboard },
+        // { label: 'Referrals', href: '/influencer/referrals', icon: Users },
+        // { label: 'Earnings', href: '/influencer/earnings', icon: TrendingUp },
     ],
 };
 
