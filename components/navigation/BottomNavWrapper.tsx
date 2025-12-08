@@ -14,5 +14,5 @@ export default async function BottomNavWrapper() {
     // Get user role from database
     const userRole = await getUserRole(user.id);
 
-    return <BottomNav userRole={userRole} />;
+    return <BottomNav userRole={userRole ?? undefined} />;
 }

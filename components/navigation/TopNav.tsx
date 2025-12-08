@@ -14,9 +14,12 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Profile } from '@/types/database.types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
+
+import CartSheet from '@/components/cart/CartSheet';
 
 interface TopNavProps {
     user: any;
@@ -27,7 +30,34 @@ export default function TopNav({ user, profile }: TopNavProps) {
     const router = useRouter();
     const { cartTotalItems } = useCart();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+
+    // Handle scroll to hide/show navbar
+    React.useEffect(() => {
+        const controlNavbar = () => {
+            if (typeof window !== 'undefined') {
+                const currentScrollY = window.scrollY;
+                
+                if (currentScrollY < 10) {
+                    setIsVisible(true);
+                } else {
+                    // Hide on scroll down, show on scroll up
+                    if (currentScrollY > lastScrollY) {
+                        setIsVisible(false);
+                    } else {
+                        setIsVisible(true);
+                    }
+                }
+                setLastScrollY(currentScrollY);
+            }
+        };
+
+        window.addEventListener('scroll', controlNavbar);
+        return () => window.removeEventListener('scroll', controlNavbar);
+    }, [lastScrollY]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -38,18 +68,20 @@ export default function TopNav({ user, profile }: TopNavProps) {
 
     return (
         <>
-            <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
+            <header className={`sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                 <div className="max-w-7xl mx-auto px-4 py-3">
                     <div className="flex items-center justify-between gap-4">
                         {/* Logo & Location */}
                         <div className="flex items-center gap-4 md:gap-8">
-                            <Link href="/" className="flex items-center gap-2 cursor-pointer">
-                                <div className="bg-green-600 p-1.5 rounded-lg">
-                                    <UtensilsCrossed className="h-5 w-5 text-white" />
-                                </div>
-                                <span className="font-bold text-xl hidden sm:block text-gray-800">
-                                    Honest<span className="text-green-600">Meals</span>
-                                </span>
+                            <Link href="/" className="relative h-8 w-32 sm:h-10 sm:w-40 shrink-0 transition-opacity hover:opacity-90">
+                                <Image 
+                                    src="/logo.png" 
+                                    alt="Honest Meals" 
+                                    fill
+                                    sizes="(max-width: 768px) 128px, 160px"
+                                    className="object-contain object-left"
+                                    priority
+                                />
                             </Link>
                             
                             <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 cursor-pointer transition-colors max-w-[200px]">
@@ -86,20 +118,18 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                 </Link>
                             </div>
 
-                            <Link href="/cart">
-                                <Button 
-                                    variant="ghost" 
-                                    className="relative hover:bg-transparent hover:text-green-600 font-medium flex items-center gap-2 px-2"
-                                >
-                                    <ShoppingCart className="h-6 w-6 md:h-5 md:w-5" />
-                                    <span className="hidden md:inline">Cart</span>
-                                    {cartTotalItems > 0 && (
-                                        <span className="absolute top-0 right-0 md:-top-1 md:-right-2 bg-green-600 text-white text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full border-2 border-white">
-                                            {cartTotalItems}
-                                        </span>
-                                    )}
-                                </Button>
-                            </Link>
+                            <button 
+                                onClick={() => setIsCartOpen(true)}
+                                className="relative hover:bg-transparent hover:text-green-600 font-medium flex items-center gap-2 px-2 py-2 rounded-md transition-colors"
+                            >
+                                <ShoppingCart className="h-6 w-6 md:h-5 md:w-5" />
+                                <span className="hidden md:inline">Cart</span>
+                                {cartTotalItems > 0 && (
+                                    <span className="absolute top-0 right-0 md:-top-1 md:-right-2 bg-green-600 text-white text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full border-2 border-white">
+                                        {cartTotalItems}
+                                    </span>
+                                )}
+                            </button>
                             
                             {user ? (
                                 <Link href="/profile">
@@ -125,7 +155,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                         </div>
                     </div>
                 </div>
-            </header>
+                        </header>
+            <CartSheet isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
 
             {/* Mobile Menu Overlay */}
             <AnimatePresence>
@@ -156,7 +187,15 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                 <div className="space-y-4">
                                     <Link href="/ordermeals" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Order Meals</Link>
                                     <Link href="/offers" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Offers</Link>
-                                    <Link href="/cart" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Cart</Link>
+                                    <button 
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            setIsCartOpen(true);
+                                        }} 
+                                        className="block text-lg font-medium text-gray-800 text-left w-full"
+                                    >
+                                        Cart
+                                    </button>
                                     <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Profile</Link>
                                 </div>
 

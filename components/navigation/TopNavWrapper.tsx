@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { getProfile } from '@/lib/database/profiles';
-import TopNav from './TopNav';
+import TopNavClient from './TopNavClient';
 
 export default async function TopNavWrapper() {
     const supabase = await createClient();
@@ -11,5 +11,5 @@ export default async function TopNavWrapper() {
         profile = await getProfile(user.id);
     }
 
-    return <TopNav user={user} profile={profile} />;
+    return <TopNavClient user={user} profile={profile} />;
 }
