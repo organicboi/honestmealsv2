@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { updateSession } from '@/utils/supabase/middleware';
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 
 // Define public routes that don't require authentication
 const publicRoutes = ['/', '/sign-in', '/sign-up', '/forgot-password', '/auth/callback'];
@@ -16,20 +15,48 @@ const roleBasedRoutes = {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Update the session (refresh token if needed)
-  const response = await updateSession(request);
+  let supabaseResponse = NextResponse.next({
+    request,
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          );
+          supabaseResponse = NextResponse.next({
+            request,
+          });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // IMPORTANT: Avoid writing any logic between createServerClient and
+  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
+  // issues with users being randomly logged out.
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Check if the current route is public
   const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/auth/'));
 
   // If it's a public route, allow access
   if (isPublicRoute) {
-    return response;
+    return supabaseResponse;
   }
-
-  // For protected routes, check authentication
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
 
   // If no user and trying to access protected route, redirect to sign-in
   if (!user) {
@@ -61,7 +88,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return response;
+  return supabaseResponse;
 }
 
 export const config = {
