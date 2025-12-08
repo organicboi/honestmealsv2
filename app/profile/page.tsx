@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { getProfileWithStats } from '@/lib/database/profiles';
 import ProfileClient from './ProfileClient';
 
 export default async function ProfilePage() {
@@ -10,5 +11,7 @@ export default async function ProfilePage() {
         redirect('/sign-in');
     }
 
-    return <ProfileClient user={user} />;
+    const profile = await getProfileWithStats(user.id);
+
+    return <ProfileClient user={user} profile={profile} />;
 }

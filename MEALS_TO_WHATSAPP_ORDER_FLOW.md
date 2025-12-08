@@ -1068,7 +1068,7 @@ localStorage.getItem("honestMealsUser")
 // Example:
 {
     name: "John Doe",
-    phone: "9876543210",
+    phone: "7972279059",
     address: "123 Main St, City"
 }
 

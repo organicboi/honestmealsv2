@@ -1,14 +1,14 @@
-import { createClient } from '@/utils/supabase/server';
-import { redirect } from 'next/navigation';
-import HealthClient from './HealthClient';
+import { getHealthDashboardData } from '@/app/actions/health'
+import HealthDashboardClient from './HealthDashboardClient'
+import { redirect } from 'next/navigation'
 
 export default async function HealthPage() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/sign-in');
-    }
-
-    return <HealthClient user={user} />;
+  try {
+    const data = await getHealthDashboardData()
+    return <HealthDashboardClient data={data} />
+  } catch (error) {
+    // If user is not authenticated or other error, redirect to sign-in
+    // In a real app, you might want to handle specific errors differently
+    redirect('/sign-in')
+  }
 }

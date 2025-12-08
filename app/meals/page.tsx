@@ -12,12 +12,8 @@ export default async function MealsPage({
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-        redirect('/sign-in');
-    }
-
-    // Fetch user profile
-    const profile = await getProfile(user.id);
+    // Fetch user profile if user exists
+    const profile = user ? await getProfile(user.id) : null;
 
     // Await searchParams
     const params = await searchParams;
