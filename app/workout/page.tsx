@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import WorkoutClient from './WorkoutClient';
+import WorkoutClientWrapper from './WorkoutClientWrapper';
 
 export default async function WorkoutPage() {
     const supabase = await createClient();
@@ -10,5 +10,5 @@ export default async function WorkoutPage() {
         redirect('/sign-in');
     }
 
-    return <WorkoutClient user={user} />;
+    return <WorkoutClientWrapper user={user} />;
 }

@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
-import GymnaClient from './GymnaClient';
+import GymnaClientWrapper from './GymnaClientWrapper';
 
 export default async function AskMePage() {
     const supabase = await createClient();
@@ -10,5 +10,5 @@ export default async function AskMePage() {
         redirect('/sign-in');
     }
 
-    return <GymnaClient user={user} />;
+    return <GymnaClientWrapper user={user} />;
 }

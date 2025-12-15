@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { Meal } from '@/types/database.types';
 import { revalidatePath } from 'next/cache';
+import { requireAdmin } from '@/lib/auth/admin';
 
 export async function getMeals() {
   const supabase = await createClient();
@@ -36,19 +37,10 @@ export async function getMeal(id: string) {
 }
 
 export async function createMeal(formData: FormData) {
-  const supabase = await createClient();
-  
-  // Check admin role
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthorized' };
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-    
-  if (profile?.role !== 'admin') return { error: 'Unauthorized' };
+  const auth = await requireAdmin();
+  if (!auth.authorized) return { error: auth.error };
+
+  const { supabase } = auth;
 
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
@@ -58,7 +50,7 @@ export async function createMeal(formData: FormData) {
   const carbs = parseFloat(formData.get('carbs') as string);
   const fat = parseFloat(formData.get('fat') as string);
   const fiber = parseFloat(formData.get('fiber') as string);
-  
+
   // Handle Image Upload
   let image_url = formData.get('image_url') as string;
   const imageFile = formData.get('image') as File;
@@ -80,7 +72,7 @@ export async function createMeal(formData: FormData) {
     const { data: { publicUrl } } = supabase.storage
       .from('meals')
       .getPublicUrl(filePath);
-      
+
     image_url = publicUrl;
   }
 
@@ -127,19 +119,10 @@ export async function createMeal(formData: FormData) {
 }
 
 export async function updateMeal(id: string, formData: FormData) {
-  const supabase = await createClient();
-  
-  // Check admin role
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthorized' };
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-    
-  if (profile?.role !== 'admin') return { error: 'Unauthorized' };
+  const auth = await requireAdmin();
+  if (!auth.authorized) return { error: auth.error };
+
+  const { supabase } = auth;
 
   const name = formData.get('name') as string;
   const description = formData.get('description') as string;
@@ -149,7 +132,7 @@ export async function updateMeal(id: string, formData: FormData) {
   const carbs = parseFloat(formData.get('carbs') as string);
   const fat = parseFloat(formData.get('fat') as string);
   const fiber = parseFloat(formData.get('fiber') as string);
-  
+
   // Handle Image Upload
   let image_url = formData.get('image_url') as string;
   const imageFile = formData.get('image') as File;
@@ -171,7 +154,7 @@ export async function updateMeal(id: string, formData: FormData) {
     const { data: { publicUrl } } = supabase.storage
       .from('meals')
       .getPublicUrl(filePath);
-      
+
     image_url = publicUrl;
   }
 
@@ -214,19 +197,10 @@ export async function updateMeal(id: string, formData: FormData) {
 }
 
 export async function deleteMeal(id: string) {
-  const supabase = await createClient();
-  
-  // Check admin role
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: 'Unauthorized' };
-  
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
-    
-  if (profile?.role !== 'admin') return { error: 'Unauthorized' };
+  const auth = await requireAdmin();
+  if (!auth.authorized) return { error: auth.error };
+
+  const { supabase } = auth;
 
   const { error } = await supabase
     .from('meals')

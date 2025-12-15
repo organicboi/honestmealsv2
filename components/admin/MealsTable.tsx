@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Meal } from '@/types/database.types';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Plus } from 'lucide-react';
@@ -61,10 +62,12 @@ export default function MealsTable({ meals }: MealsTableProps) {
                   <td className="px-6 py-4 font-medium text-gray-900">
                     <div className="flex items-center gap-3">
                       {meal.image_url && (
-                        <img 
-                          src={meal.image_url} 
-                          alt={meal.name} 
-                          className="w-10 h-10 rounded-full object-cover"
+                        <Image
+                          src={meal.image_url}
+                          alt={meal.name}
+                          width={40}
+                          height={40}
+                          className="rounded-full object-cover"
                         />
                       )}
                       <div>

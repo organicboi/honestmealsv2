@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { updateUserStreak } from '@/lib/utils/streak';
 
 export async function login(formData: FormData) {
   const supabase = await createClient();
@@ -17,41 +18,9 @@ export async function login(formData: FormData) {
     return { error: error.message };
   }
 
-  // TEMPORARY: Increase streak on every login
+  // Update user streak on successful login
   if (authData.user) {
-    try {
-      const { data: streak } = await supabase
-        .from('user_streaks')
-        .select('*')
-        .eq('customer_id', authData.user.id)
-        .eq('streak_type', 'nutrition_goals')
-        .maybeSingle();
-
-      if (streak) {
-        await supabase
-          .from('user_streaks')
-          .update({ 
-            current_streak: streak.current_streak + 1,
-            // Update longest streak if current exceeds it
-            longest_streak: Math.max(streak.longest_streak, streak.current_streak + 1),
-            last_activity_date: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', streak.id);
-      } else {
-        await supabase
-          .from('user_streaks')
-          .insert({
-            customer_id: authData.user.id,
-            current_streak: 1,
-            longest_streak: 1,
-            streak_type: 'nutrition_goals',
-            last_activity_date: new Date().toISOString()
-          });
-      }
-    } catch (err) {
-      console.error('Failed to update streak on login:', err);
-    }
+    await updateUserStreak(supabase, authData.user.id);
   }
 
   redirect('/');

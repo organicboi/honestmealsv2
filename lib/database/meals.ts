@@ -1,4 +1,5 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createAnonymousClient } from '@/utils/supabase/server';
+import { unstable_cache } from 'next/cache';
 import type { Meal, MealWithDetails, MealCategory, DietaryType } from '@/types/database.types';
 
 export async function getMeals(options?: {
@@ -104,37 +105,49 @@ export async function getMealById(mealId: string) {
   return data as MealWithDetails;
 }
 
-export async function getMealCategories() {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('meal_categories')
-    .select('*')
-    .order('name');
+// Cache meal categories for 1 hour (they rarely change)
+// Uses anonymous client to avoid cookies() inside unstable_cache
+export const getMealCategories = unstable_cache(
+  async () => {
+    const supabase = createAnonymousClient();
 
-  if (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
+    const { data, error } = await supabase
+      .from('meal_categories')
+      .select('*')
+      .order('name');
 
-  return data as MealCategory[];
-}
+    if (error) {
+      console.error('Error fetching categories:', error);
+      return [];
+    }
 
-export async function getDietaryTypes() {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('dietary_types')
-    .select('*')
-    .order('name');
+    return data as MealCategory[];
+  },
+  ['meal-categories'],
+  { revalidate: 3600, tags: ['meal-categories'] }
+);
 
-  if (error) {
-    console.error('Error fetching dietary types:', error);
-    return [];
-  }
+// Cache dietary types for 1 hour (they rarely change)
+// Uses anonymous client to avoid cookies() inside unstable_cache
+export const getDietaryTypes = unstable_cache(
+  async () => {
+    const supabase = createAnonymousClient();
 
-  return data as DietaryType[];
-}
+    const { data, error } = await supabase
+      .from('dietary_types')
+      .select('*')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching dietary types:', error);
+      return [];
+    }
+
+    return data as DietaryType[];
+  },
+  ['dietary-types'],
+  { revalidate: 3600, tags: ['dietary-types'] }
+);
 
 export async function searchMeals(searchQuery: string) {
   const supabase = await createClient();
@@ -205,29 +218,29 @@ export async function getUserFavoriteMeals(userId: string) {
 
 export async function toggleFavorite(userId: string, mealId: string) {
   const supabase = await createClient();
-  
-  // Check if already favorited
-  const { data: existing } = await supabase
+
+  // Optimized: Try to delete first, if no rows affected then insert
+  // This reduces 2 queries to 1 in most cases
+  const { data: deleted, error: deleteError } = await supabase
     .from('favorites')
-    .select('id')
+    .delete()
     .eq('user_id', userId)
     .eq('meal_id', mealId)
-    .single();
+    .select('id');
 
-  if (existing) {
-    // Remove favorite
-    const { error } = await supabase
-      .from('favorites')
-      .delete()
-      .eq('id', existing.id);
-    
-    return { success: !error, action: 'removed' };
-  } else {
-    // Add favorite
-    const { error } = await supabase
-      .from('favorites')
-      .insert({ user_id: userId, meal_id: mealId });
-    
-    return { success: !error, action: 'added' };
+  if (deleteError) {
+    return { success: false, action: 'error' };
   }
+
+  // If we deleted something, the favorite was removed
+  if (deleted && deleted.length > 0) {
+    return { success: true, action: 'removed' };
+  }
+
+  // Nothing was deleted, so add the favorite
+  const { error: insertError } = await supabase
+    .from('favorites')
+    .insert({ user_id: userId, meal_id: mealId });
+
+  return { success: !insertError, action: 'added' };
 }

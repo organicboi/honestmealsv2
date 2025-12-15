@@ -26,16 +26,16 @@ export default async function MealsPage({
         foodType = 'non-vegetarian';
     }
 
-    // Fetch meals from database
-    const meals = await getMeals({
-        foodType,
-        categoryId: params.category,
-        isAvailable: true,
-    });
-
-    // Fetch categories and dietary types
-    const categories = await getMealCategories();
-    const dietaryTypes = await getDietaryTypes();
+    // Fetch meals, categories, and dietary types in parallel for better performance
+    const [meals, categories, dietaryTypes] = await Promise.all([
+        getMeals({
+            foodType,
+            categoryId: params.category,
+            isAvailable: true,
+        }),
+        getMealCategories(),
+        getDietaryTypes(),
+    ]);
 
     return (
         <MealsClient 

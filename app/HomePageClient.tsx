@@ -1,622 +1,454 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-    Leaf,
-    Utensils,
-    ArrowRight,
-    DollarSign,
-    Clock,
-    Heart,
-    Coffee,
-    Settings,
-    CreditCard,
-    User
-} from 'lucide-react';
-import Image from 'next/image';
+import React, { useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
+import Image from 'next/image';
+import { 
+    ArrowRight, 
+    Star, 
+    Clock, 
+    Flame, 
+    ChefHat,
+    Leaf,
+    Beef,
+    Coffee,
+    Sparkles,
+    Quote,
+    CheckCircle2,
+    MousePointerClick
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import PincodeChecker from '@/components/ui/PincodeChecker';
-import backgroundVeg from '@/assets/images/homepage/bg-veg.jpg';
-import backgroundNonVeg from '@/assets/images/homepage/bg-non-veg.jpg';
-import backgroundHealthyDrinks from '@/app/bg-healthyDrinks.avif';
-import backgroundCustomizedMeals from '@/app/bg-customizeMeals.jpg';
 
-interface HomePageClientProps {
-    user: any;
-}
+// Assets
+import bgVeg from '@/assets/images/homepage/bg-veg.jpg';
+import bgNonVeg from '@/assets/images/homepage/bg-non-veg.jpg';
+import bgDrinks from '@/app/bg-healthyDrinks.avif';
+import bgCustom from '@/app/bg-customizeMeals.jpg';
+import heroBg from '@/assets/images/homepage/bg-image.jpg'; 
 
-export default function HomePageClient({ user }: HomePageClientProps) {
-    const [selectedOption, setSelectedOption] = useState<string | null>(null);
-    const router = useRouter();
+// --- COMPONENTS ---
 
-    const handleOptionSelect = (option: string) => {
-        setSelectedOption(option);
-        setTimeout(() => {
-            router.push(`/meals?diet=${option}`);
-        }, 100);
-    };
+const TiltCard = ({ children, className, onClick }: { children: React.ReactNode, className?: string, onClick?: () => void }) => {
+    const x = useMotionValue(0);
+    const y = useMotionValue(0);
+    const mouseX = useSpring(x, { stiffness: 500, damping: 100 });
+    const mouseY = useSpring(y, { stiffness: 500, damping: 100 });
 
-    // Animation variants
-    const fadeIn = {
-        hidden: { opacity: 0, y: 20 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-    };
+    function onMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
+        const { left, top, width, height } = currentTarget.getBoundingClientRect();
+        x.set(clientX - left - width / 2);
+        y.set(clientY - top - height / 2);
+    }
 
-    const staggerContainer = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.2
-            }
-        }
-    };
+    function onMouseLeave() {
+        x.set(0);
+        y.set(0);
+    }
 
-    const cardHover = {
-        rest: { scale: 1 },
-        hover: { scale: 1.03, transition: { duration: 0.3 } }
-    };
+    const rotateX = useTransform(mouseY, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
+    const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
 
     return (
-        <div className="relative min-h-screen">
-            {/* Hero Section with About Us */}
-            <div className="relative min-h-screen flex flex-col">
-                {/* Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-green-100 via-white to-green-50 z-0"></div>
+        <motion.div
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
+            style={{
+                rotateX: useTransform(mouseY, [-300, 300], [5, -5]),
+                rotateY: useTransform(mouseX, [-300, 300], [-5, 5]),
+                transformStyle: "preserve-3d",
+            }}
+            onClick={onClick}
+            className={`relative transition-all duration-200 ease-out ${className}`}
+        >
+            {children}
+        </motion.div>
+    );
+};
 
-                {/* Pattern Overlay */}
-                <div className="absolute inset-0 opacity-5 z-0"
-                     style={{
-                         backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")",
-                     }}></div>
+const ParallaxText = ({ children, baseVelocity = 100 }: { children: string, baseVelocity?: number }) => {
+    const baseX = useMotionValue(0);
+    const { scrollY } = useScroll();
+    const scrollVelocity = useSpring(scrollY, { damping: 50, stiffness: 400 });
+    const velocityFactor = useTransform(scrollVelocity, [0, 1000], [0, 5], { clamp: false });
+    const x = useTransform(baseX, (v) => `${v}%`); // Wrap logic would be needed for true infinite, simplified here
 
-                <div className="relative z-10 container mx-auto px-4 flex-1 flex flex-col">
-                    {/* Header */}
-                    <header className="flex flex-col md:flex-row justify-between items-center py-4 md:py-6 gap-4 md:gap-0">
-                        <div className="w-full md:w-auto flex justify-center md:justify-start">
-                            <div className="text-2xl font-bold text-green-600">Honest Meals</div>
-                        </div>
-                        <nav className="hidden md:flex space-x-8">
-                            <a href="#about" className="text-gray-600 hover:text-green-600 font-medium">About</a>
-                            <a href="#meals" className="text-gray-600 hover:text-green-600 font-medium">Meals</a>
-                            <a href="#why-us" className="text-gray-600 hover:text-green-600 font-medium">Why Us</a>
-                            <a href="#testimonials" className="text-gray-600 hover:text-green-600 font-medium">Reviews</a>
-                        </nav>
-                        <div className="w-full md:w-auto md:hidden">
-                            <div className="bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-green-100 py-2 px-4 flex justify-center items-center mx-auto max-w-xs">
-                                <PincodeChecker compact={true} />
-                            </div>
-                        </div>
-                    </header> 
+    const directionFactor = useRef<number>(1);
+    useSpring(scrollY, { damping: 50, stiffness: 400 }).onChange((v) => {
+        // Logic to update direction based on scroll delta could go here
+    });
 
-                    {/* About Us Section */}
-                    <motion.section
-                        id="about"
-                        className="py-10 md:py-16"
-                        initial="hidden"
-                        animate="visible"
-                        variants={fadeIn}
-                    >
-                        <div className="max-w-4xl mx-auto text-center">
-                            <h1 className="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
-                                Real Food for <span className="text-green-600">Real People</span>
+    // Simplified marquee for this demo
+    return (
+        <div className="overflow-hidden whitespace-nowrap flex flex-nowrap">
+            <motion.div 
+                className="flex flex-nowrap text-6xl md:text-9xl font-black uppercase text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-300/50"
+                animate={{ x: [0, -1000] }}
+                transition={{ repeat: Infinity, duration: 30, ease: "linear" }}
+            >
+                <span className="mr-12">{children}</span>
+                <span className="mr-12">{children}</span>
+                <span className="mr-12">{children}</span>
+                <span className="mr-12">{children}</span>
+            </motion.div>
+        </div>
+    );
+};
+
+export default function HomePageClient({ user }: { user: any }) {
+    const router = useRouter();
+    const { scrollYProgress } = useScroll();
+    const scale = useTransform(scrollYProgress, [0, 1], [1, 1.1]);
+
+    return (
+        <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-green-200 selection:text-green-900">
+            
+            {/* --- HERO SECTION --- */}
+            <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
+                <motion.div style={{ scale }} className="absolute inset-0 z-0">
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-white z-10" />
+                    <Image src={heroBg} alt="Hero" fill className="object-cover" priority />
+                </motion.div>
+
+                <div className="relative z-20 container mx-auto px-4">
+                    <div className="max-w-5xl mx-auto text-center">
+                        <motion.div
+                            initial={{ opacity: 0, y: 50 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            
+                            
+                            <h1 className="text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.9]">
+                                EAT <span className="text-green-500">REAL.</span><br />
+                                LIVE <span className="italic font-serif font-light text-white/90">BETTER.</span>
                             </h1>
-                            <p className="text-xl text-gray-600 mb-8">
-                                We're different because we believe in honest portions, fair prices, and real ingredients.
-                                No hidden charges, no tiny servings - just quality meals that satisfy hunger and fit your lifestyle.
+                            
+                            <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+                                No hidden fees. No tiny portions. <br/>
+                                Just honest food for honest people.
                             </p>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12 text-center">
-                                <div className="bg-white p-6 rounded-xl shadow-md">
-                                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <CreditCard className="h-6 w-6 text-green-600" />
+                            
+                            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                                <Button 
+                                    onClick={() => router.push('/meals')}
+                                    className="h-16 px-12 rounded-full bg-green-600 hover:bg-green-500 text-white font-bold text-lg shadow-2xl shadow-green-900/50 transition-all hover:scale-105 hover:shadow-green-500/30"
+                                >
+                                    Order Now
+                                </Button>
+                                <div className="flex items-center gap-4 text-white/80">
+                                    <div className="flex -space-x-3">
+                                        {[1,2,3].map(i => (
+                                            <div key={i} className="w-10 h-10 rounded-full bg-gray-200 border-2 border-black flex items-center justify-center text-xs font-bold text-black">
+                                                {String.fromCharCode(64+i)}
+                                            </div>
+                                        ))}
                                     </div>
-                                    <h3 className="font-bold text-lg mb-2">Fair Pricing</h3>
-                                    <p className="text-gray-600">Market cost + small fee. No hidden markups.</p>
-                                </div>
-                                <div className="bg-white p-6 rounded-xl shadow-md">
-                                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Utensils className="h-6 w-6 text-green-600" />
+                                    <div className="text-left">
+                                        <div className="flex text-yellow-400 text-xs">
+                                            {[...Array(5)].map((_,i) => <Star key={i} className="w-3 h-3 fill-current" />)}
+                                        </div>
+                                        <div className="text-xs font-medium">5k+ Happy Eaters</div>
                                     </div>
-                                    <h3 className="font-bold text-lg mb-2">Real Portions</h3>
-                                    <p className="text-gray-600">Meals that actually satisfy with proper nutrition.</p>
-                                </div>
-                                <div className="bg-white p-6 rounded-xl shadow-md">
-                                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Clock className="h-6 w-6 text-green-600" />
-                                    </div>
-                                    <h3 className="font-bold text-lg mb-2">Quick Delivery</h3>
-                                    <p className="text-gray-600">30-minute delivery to save you valuable time.</p>
                                 </div>
                             </div>
-                        </div>
-                    </motion.section>
-
-                    {/* What do you want to eat today? Section */}
-                    <motion.section
-                        id="meals"
-                        className="py-12 md:py-20"
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={fadeIn}
-                    >
-                        <div className="text-center mb-12">
-                            <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-                                What Would You Like To <span className="text-green-600">Eat Today?</span>
-                            </h2>
-                            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                                Choose from our delicious meal options crafted with fresh ingredients and honest portions.
-                            </p>
-                        </div>
-
-                        {/* Food Choice Cards */}
-                        <motion.div
-                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
-                            variants={staggerContainer}
-                            initial="hidden"
-                            whileInView="visible"
-                            viewport={{ once: true }}
-                        >
-                            {/* Vegetarian Card */}
-                            <motion.div
-                                variants={fadeIn}
-                                whileHover="hover"
-                                initial="rest"
-                                animate="rest"
-                                onClick={() => handleOptionSelect("veg")}
-                                className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer shadow-lg transition-all duration-300 h-80 ${
-                                    selectedOption === "veg" ? "ring-4 ring-green-500" : ""
-                                }`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-10"></div>
-                                <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20">
-                                    <div className="bg-green-500/90 text-white px-3 py-1 rounded-full flex items-center">
-                                        <Leaf className="h-4 w-4 mr-1" />
-                                        <span className="font-medium">Vegetarian</span>
-                                    </div>
-                                    <div className="bg-white/90 text-green-600 px-2 py-1 rounded-full text-sm font-medium">
-                                        From ₹60
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
-                                    <h3 className="text-xl font-bold mb-1">Plant-Powered Meals</h3>
-                                    <p className="text-gray-100 text-sm mb-3">Nutrient-rich vegetarian dishes with 100g protein portions</p>
-                                    <Button
-                                        className="bg-green-500 hover:bg-green-600 text-white rounded-full text-sm"
-                                        size="sm"
-                                    >
-                                        Choose Vegetarian
-                                        <ArrowRight className="ml-1 h-3 w-3" />
-                                    </Button>
-                                </div>
-                                <div className="absolute inset-0 z-0 bg-green-900">
-                                    <div className="w-full h-full relative">
-                                        <Image
-                                            src={backgroundVeg}
-                                            alt="Vegetarian food"
-                                            fill
-                                            className="object-cover opacity-90"
-                                            placeholder="blur"
-                                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAADAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAdEAABBAIDAAAAAAAAAAAAAAAAAQIDEQQFBhIh/8QAFQEBAQAAAAAAAAAAAAAAAAAABAX/xAAaEQACAgMAAAAAAAAAAAAAAAABAgADBBEh/9oADAMBAAIRAxEAPwCK3XbibMkjc+auNFkSK1DqGOVURPRYACot7MUez//Z"
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Non-Vegetarian Card */}
-                            <motion.div
-                                variants={fadeIn}
-                                whileHover="hover"
-                                initial="rest"
-                                animate="rest"
-                                onClick={() => handleOptionSelect("non-veg")}
-                                className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer shadow-lg transition-all duration-300 h-80 ${
-                                    selectedOption === "non-veg" ? "ring-4 ring-red-500" : ""
-                                }`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-10"></div>
-                                <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20">
-                                    <div className="bg-red-500/90 text-white px-3 py-1 rounded-full flex items-center">
-                                        <Utensils className="h-4 w-4 mr-1" />
-                                        <span className="font-medium">Non-Veg</span>
-                                    </div>
-                                    <div className="bg-white/90 text-red-600 px-2 py-1 rounded-full text-sm font-medium">
-                                        From ₹85
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
-                                    <h3 className="text-xl font-bold mb-1">Protein-Rich Meals</h3>
-                                    <p className="text-gray-100 text-sm mb-3">Hearty non-veg dishes with generous 250g portions</p>
-                                    <Button
-                                        className="bg-red-500 hover:bg-red-600 text-white rounded-full text-sm"
-                                        size="sm"
-                                    >
-                                        Choose Non-Vegetarian
-                                        <ArrowRight className="ml-1 h-3 w-3" />
-                                    </Button>
-                                </div>
-                                <div className="absolute inset-0 z-0 bg-red-900">
-                                    <div className="w-full h-full relative">
-                                        <Image
-                                            src={backgroundNonVeg}
-                                            alt="Non-vegetarian food"
-                                            fill
-                                            className="object-cover opacity-90"
-                                            placeholder="blur"
-                                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAADAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAdEAABBAIDAAAAAAAAAAAAAAAAAQIDEQQFBhIh/8QAFQEBAQAAAAAAAAAAAAAAAAAABAX/xAAaEQACAgMAAAAAAAAAAAAAAAABAgADBBEh/9oADAMBAAIRAxEAPwCK3XbibMkjc+auNFkSK1DqGOVURPRYACot7MUez//Z"
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Healthy Drinks Card */}
-                            <motion.div
-                                variants={fadeIn}
-                                whileHover="hover"
-                                initial="rest"
-                                animate="rest"
-                                onClick={() => handleOptionSelect("healthy-drinks")}
-                                className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer shadow-lg transition-all duration-300 h-80 ${
-                                    selectedOption === "drinks" ? "ring-4 ring-blue-500" : ""
-                                }`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-10"></div>
-                                <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20">
-                                    <div className="bg-blue-500/90 text-white px-3 py-1 rounded-full flex items-center">
-                                        <Coffee className="h-4 w-4 mr-1" />
-                                        <span className="font-medium">Healthy Drinks</span>
-                                    </div>
-                                    <div className="bg-white/90 text-blue-600 px-2 py-1 rounded-full text-sm font-medium">
-                                        From ₹40
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
-                                    <h3 className="text-xl font-bold mb-1">Fresh Juices & Smoothies</h3>
-                                    <p className="text-gray-100 text-sm mb-3">Natural refreshments packed with vitamins and nutrients</p>
-                                    <Button
-                                        className="bg-blue-500 hover:bg-blue-600 text-white rounded-full text-sm"
-                                        size="sm"
-                                    >
-                                        Choose Drinks
-                                        <ArrowRight className="ml-1 h-3 w-3" />
-                                    </Button>
-                                </div>
-                                <div className="absolute inset-0 z-0 bg-red-900">
-                                    <div className="w-full h-full relative">
-                                        <Image
-                                            src={backgroundHealthyDrinks}
-                                            alt="Healthy drinks"
-                                            fill
-                                            className="object-cover opacity-90"
-                                            placeholder="blur"
-                                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAADAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAdEAABBAIDAAAAAAAAAAAAAAAAAQIDEQQFBhIh/8QAFQEBAQAAAAAAAAAAAAAAAAAABAX/xAAaEQACAgMAAAAAAAAAAAAAAAABAgADBBEh/9oADAMBAAIRAxEAPwCK3XbibMkjc+auNFkSK1DqGOVURPRYACot7MUez//Z"
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
-
-                            {/* Customized Meals Card */}
-                            <motion.div
-                                variants={fadeIn}
-                                whileHover="hover"
-                                initial="rest"
-                                animate="rest"
-                                onClick={() => router.push(`/customize-meal`)}
-                                className={`relative bg-white rounded-2xl overflow-hidden cursor-pointer shadow-lg transition-all duration-300 h-80 ${
-                                    selectedOption === "custom" ? "ring-4 ring-purple-500" : ""
-                                }`}
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-10"></div>
-                                <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20">
-                                    <div className="bg-purple-500/90 text-white px-3 py-1 rounded-full flex items-center">
-                                        <Settings className="h-4 w-4 mr-1" />
-                                        <span className="font-medium">Customize</span>
-                                    </div>
-                                    <div className="bg-white/90 text-purple-600 px-2 py-1 rounded-full text-sm font-medium">
-                                        You Decide!
-                                    </div>
-                                </div>
-                                <div className="absolute bottom-0 left-0 w-full p-4 z-20 text-white">
-                                    <h3 className="text-xl font-bold mb-1">Build Your Own Meal</h3>
-                                    <p className="text-gray-100 text-sm mb-3">Create your perfect meal with our selection of ingredients</p>
-                                    <Button
-                                        className="bg-purple-500 hover:bg-purple-600 text-white rounded-full text-sm"
-                                        size="sm"
-                                    >
-                                        Customize Meal
-                                        <ArrowRight className="ml-1 h-3 w-3" />
-                                    </Button>
-                                </div>
-                                <div className="absolute inset-0 z-0 bg-red-900">
-                                    <div className="w-full h-full relative">
-                                        <Image
-                                            src={backgroundCustomizedMeals}
-                                            alt="Customized meals"
-                                            fill
-                                            className="object-cover opacity-90"
-                                            placeholder="blur"
-                                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAADAAQDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAdEAABBAIDAAAAAAAAAAAAAAAAAQIDEQQFBhIh/8QAFQEBAQAAAAAAAAAAAAAAAAAABAX/xAAaEQACAgMAAAAAAAAAAAAAAAABAgADBBEh/9oADAMBAAIRAxEAPwCK3XbibMkjc+auNFkSK1DqGOVURPRYACot7MUez//Z"
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
                         </motion.div>
-
-                        {/* View All Button */}
-                        <motion.div
-                            variants={fadeIn}
-                            className="mt-8 text-center"
-                        >
-                            <Button
-                                onClick={() => router.push("/meals")}
-                                variant="outline"
-                                size="lg"
-                                className="border-green-500 text-green-600 hover:bg-green-50 rounded-full px-8"
-                            >
-                                View All Meals
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </motion.div>
-                    </motion.section>
+                    </div>
                 </div>
+
+                {/* Scroll Indicator */}
+                <motion.div 
+                    animate={{ y: [0, 10, 0] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="absolute bottom-10 left-1/2 -translate-x-1/2 text-white/50 flex flex-col items-center gap-2"
+                >
+                    <span className="text-[10px] uppercase tracking-widest">Scroll</span>
+                    <div className="w-[1px] h-12 bg-gradient-to-b from-white/0 via-white/50 to-white/0" />
+                </motion.div>
+            </section>
+
+            {/* --- MARQUEE --- */}
+            <div className="py-12 bg-white border-b border-gray-100">
+                <ParallaxText>FRESH INGREDIENTS • TRANSPARENT PRICING • MACRO COUNTED • </ParallaxText>
             </div>
 
-            {/* Why Choose Us Section */}
-            <section id="why-us" className="py-16 bg-gray-50">
+            {/* --- MENU GRID (TILT EFFECT) --- */}
+            <section className="py-20 md:py-32 bg-gray-50">
                 <div className="container mx-auto px-4">
-                    <motion.div
-                        className="text-center mb-12"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <span className="inline-block px-4 py-1 rounded-full bg-green-100 text-green-600 text-sm font-medium mb-4">
-                            Our Promise
-                        </span>
-                        <h2 className="text-3xl md:text-4xl font-bold mb-6">Why Choose <span className="text-green-600">Honest Meals</span>?</h2>
-                        <p className="text-gray-600 max-w-2xl mx-auto">
-                            We're bringing transparency and quality to meal delivery with honest portions and fair pricing.
-                        </p>
-                    </motion.div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-                        {/* Feature Cards */}
-                        <motion.div
-                            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1, duration: 0.6 }}
-                        >
-                            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                                <DollarSign className="h-7 w-7 text-green-600" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-4">Fair Pricing</h3>
-                            <p className="text-gray-600 mb-6">
-                                Market cost + small fee. No hidden charges or markups. We believe quality food shouldn't break the bank.
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 md:mb-16">
+                        <div className="max-w-xl">
+                            <h2 className="text-4xl md:text-6xl font-black text-gray-900 mb-4 tracking-tight">
+                                CURATED <span className="text-green-600">MENU</span>
+                            </h2>
+                            <p className="text-gray-500 text-lg">
+                                Designed by nutritionists, cooked by chefs. Choose the plan that fits your goals.
                             </p>
-                            <div className="pt-4 border-t border-gray-100">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">Veg meals from</span>
-                                    <span className="text-lg font-bold text-green-600">₹60</span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Non-veg meals from</span>
-                                    <span className="text-lg font-bold text-green-600">₹85</span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Healthy drinks from</span>
-                                    <span className="text-lg font-bold text-green-600">₹40</span>
-                                </div>
-                            </div>
-                        </motion.div>
+                        </div>
+                        <Button variant="ghost" className="hidden md:flex gap-2 text-lg hover:bg-transparent hover:text-green-600" onClick={() => router.push('/meals')}>
+                            View Full Menu <ArrowRight className="w-5 h-5" />
+                        </Button>
+                    </div>
 
-                        <motion.div
-                            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.2, duration: 0.6 }}
-                        >
-                            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                                <Utensils className="h-7 w-7 text-green-600" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-4">Real Portions</h3>
-                            <p className="text-gray-600 mb-6">
-                                No more tiny portions. We serve meals that actually satisfy hunger and provide the nutrition you need.
-                            </p>
-                            <div className="pt-4 border-t border-gray-100">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">Protein in veg meals</span>
-                                    <span className="text-lg font-bold text-green-600">100g</span>
+                    {/* Mobile: Horizontal Scroll Snap */}
+                    <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory flex gap-4 pb-8 scrollbar-hide">
+                        {/* Veg Card Mobile */}
+                        <div className="snap-center shrink-0 w-[85vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg" onClick={() => router.push('/meals?diet=veg')}>
+                            <Image src={bgVeg} alt="Veg" fill className="object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                            <div className="absolute bottom-0 left-0 p-6 w-full">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="px-3 py-1 rounded-full bg-green-500 text-white text-[10px] font-bold uppercase tracking-wider">Bestseller</span>
+                                    <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider">₹60</span>
                                 </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Protein in non-veg meals</span>
-                                    <span className="text-lg font-bold text-green-600">250g</span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Fresh fruit in smoothies</span>
-                                    <span className="text-lg font-bold text-green-600">200g</span>
+                                <h3 className="text-4xl font-bold text-white mb-2">Vegetarian</h3>
+                                <p className="text-gray-300 text-sm line-clamp-2">Wholesome, plant-based meals rich in fiber and essential nutrients.</p>
+                                <div className="mt-4 flex items-center text-green-400 text-sm font-bold">
+                                    Tap to Explore <ArrowRight className="w-4 h-4 ml-1" />
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
 
-                        <motion.div
-                            className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                        >
-                            <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-4">
-                                <Clock className="h-7 w-7 text-green-600" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-4">Time-Saving</h3>
-                            <p className="text-gray-600 mb-6">
-                                Skip cooking, save hours. Perfect for busy professionals and students who value their time.
-                            </p>
-                            <div className="pt-4 border-t border-gray-100">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-500">Average delivery time</span>
-                                    <span className="text-lg font-bold text-green-600">30 min</span>
+                        {/* Non-Veg Card Mobile */}
+                        <div className="snap-center shrink-0 w-[85vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg" onClick={() => router.push('/meals?diet=non-veg')}>
+                            <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+                            <div className="absolute bottom-0 left-0 p-6 w-full">
+                                <div className="flex justify-between items-end mb-2">
+                                    <h3 className="text-3xl font-bold text-white">Non-Veg</h3>
+                                    <span className="text-white font-bold text-xl">₹85</span>
                                 </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Time saved per meal</span>
-                                    <span className="text-lg font-bold text-green-600">~1 hour</span>
-                                </div>
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-sm text-gray-500">Weekly time savings</span>
-                                    <span className="text-lg font-bold text-green-600">7+ hours</span>
+                                <p className="text-gray-300 text-sm mb-4">High protein, premium cuts for muscle gain.</p>
+                                <div className="flex items-center text-red-400 text-sm font-bold">
+                                    Tap to Explore <ArrowRight className="w-4 h-4 ml-1" />
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
+
+                        {/* Drinks Card Mobile */}
+                        <div className="snap-center shrink-0 w-[70vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg bg-blue-950" onClick={() => router.push('/meals?diet=healthy-drinks')}>
+                            <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-80" />
+                            <div className="absolute inset-0 bg-blue-900/40 mix-blend-multiply" />
+                            <div className="absolute inset-0 flex flex-col justify-end p-6">
+                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-4">
+                                    <Coffee className="w-6 h-6 text-white" />
+                                </div>
+                                <h3 className="text-3xl font-bold text-white mb-1">Elixirs</h3>
+                                <p className="text-blue-100 text-sm">Detox & Energy drinks.</p>
+                            </div>
+                        </div>
+
+                        {/* Custom Card Mobile */}
+                        <div className="snap-center shrink-0 w-[70vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg bg-gray-900" onClick={() => router.push('/customize-meal')}>
+                            <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-50" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+                                <div className="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center mb-4 text-white">
+                                    <ChefHat className="w-8 h-8" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white">Custom</h3>
+                                <p className="text-gray-400 text-sm mt-2">Build your own meal plan.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop: Bento Grid */}
+                    <div className="hidden md:grid grid-cols-12 gap-6 h-[700px]">
+                        {/* Main Feature - Veg */}
+                        <div className="col-span-7 h-full">
+                            <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group" onClick={() => router.push('/meals?diet=veg')}>
+                                <Image src={bgVeg} alt="Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-70 transition-opacity" />
+                                <div className="absolute bottom-0 left-0 p-12 w-full">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <span className="px-4 py-1.5 rounded-full bg-green-500 text-white text-xs font-bold uppercase tracking-wider">Bestseller</span>
+                                        <span className="px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-bold uppercase tracking-wider">₹60 / Meal</span>
+                                    </div>
+                                    <h3 className="text-6xl font-bold text-white mb-2">Vegetarian</h3>
+                                    <p className="text-gray-300 text-lg max-w-md">Wholesome, plant-based meals rich in fiber and essential nutrients.</p>
+                                </div>
+                                <div className="absolute top-8 right-8 w-16 h-16 bg-white rounded-full flex items-center justify-center text-black opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0">
+                                    <ArrowRight className="w-6 h-6" />
+                                </div>
+                            </TiltCard>
+                        </div>
+
+                        <div className="col-span-5 flex flex-col gap-6 h-full">
+                            {/* Non-Veg */}
+                            <div className="flex-1">
+                                <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group" onClick={() => router.push('/meals?diet=non-veg')}>
+                                    <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                                    <div className="absolute bottom-0 left-0 p-8 w-full">
+                                        <div className="flex justify-between items-end">
+                                            <div>
+                                                <h3 className="text-3xl font-bold text-white mb-1">Non-Veg</h3>
+                                                <p className="text-gray-300 text-sm">High protein, premium cuts</p>
+                                            </div>
+                                            <div className="text-white font-bold text-xl">₹85</div>
+                                        </div>
+                                    </div>
+                                </TiltCard>
+                            </div>
+
+                            {/* Split Row */}
+                            <div className="flex-1 grid grid-cols-2 gap-6">
+                                <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group bg-blue-950" onClick={() => router.push('/meals?diet=healthy-drinks')}>
+                                    <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-80 transition-transform duration-700 group-hover:scale-110" />
+                                    <div className="absolute inset-0 bg-blue-900/30 mix-blend-multiply" />
+                                    <div className="absolute inset-0 flex flex-col justify-between p-6">
+                                        <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
+                                            <Coffee className="w-5 h-5 text-white" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white">Elixirs</h3>
+                                            <p className="text-blue-100 text-xs">Detox & Energy</p>
+                                        </div>
+                                    </div>
+                                </TiltCard>
+
+                                <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group bg-gray-900" onClick={() => router.push('/customize-meal')}>
+                                    <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-50 transition-transform duration-700 group-hover:scale-110" />
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
+                                        <div className="w-14 h-14 rounded-full border-2 border-white/30 flex items-center justify-center mb-4 group-hover:border-green-500 group-hover:text-green-500 text-white transition-colors">
+                                            <ChefHat className="w-6 h-6" />
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white">Custom</h3>
+                                        <p className="text-gray-400 text-xs mt-1">You're the chef</p>
+                                    </div>
+                                </TiltCard>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* Testimonials Section */}
-            <section id="testimonials" className="py-16 bg-white">
+            {/* --- STICKY FEATURES SECTION --- */}
+            <section className="py-32 bg-white">
                 <div className="container mx-auto px-4">
-                    <motion.div
-                        className="text-center mb-12"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                    >
-                        <span className="inline-block px-4 py-1 rounded-full bg-green-100 text-green-600 text-sm font-medium mb-4">
-                            Customer Love
-                        </span>
-                        <h2 className="text-3xl md:text-4xl font-bold mb-6">What Our <span className="text-green-600">Customers</span> Say</h2>
-                        <p className="text-gray-600 max-w-2xl mx-auto">
-                            Don't just take our word for it. Here's what our happy customers have to say.
-                        </p>
-                    </motion.div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Testimonial Cards */}
-                        <motion.div
-                            className="bg-gray-50 p-6 rounded-xl shadow-sm"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.1, duration: 0.6 }}
-                        >
-                            <div className="flex items-center mb-4">
-                                <div className="w-10 h-10 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-bold text-lg mr-3">
-                                    A
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Aditya Singh</h4>
-                                    <p className="text-gray-500 text-sm">Regular Customer</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-600 italic mb-4">
-                                "Finally, a meal service with real portions! The chicken curry is perfect after my gym sessions. Great value for money."
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+                        <div className="lg:sticky lg:top-32 h-fit">
+                            <span className="text-green-600 font-bold tracking-widest uppercase text-sm mb-4 block">The Honest Difference</span>
+                            <h2 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 leading-tight">
+                                WE DON'T <br/>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-800">HIDE</span> ANYTHING.
+                            </h2>
+                            <p className="text-xl text-gray-500 mb-12 leading-relaxed max-w-md">
+                                Most delivery apps hide fees and shrink portions. We do the opposite. 
+                                See exactly what you're paying for and exactly what you're eating.
                             </p>
-                            <div className="flex text-yellow-400">
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                            </div>
-                        </motion.div>
+                            <Button size="lg" className="rounded-full px-8 bg-gray-900 text-white hover:bg-gray-800">
+                                Read Our Manifesto
+                            </Button>
+                        </div>
 
-                        <motion.div
-                            className="bg-gray-50 p-6 rounded-xl shadow-sm"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.2, duration: 0.6 }}
-                        >
-                            <div className="flex items-center mb-4">
-                                <div className="w-10 h-10 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-bold text-lg mr-3">
-                                    P
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Priya Mehta</h4>
-                                    <p className="text-gray-500 text-sm">Hostel Student</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-600 italic mb-4">
-                                "As a hostel student, I love the affordable, healthy meals without cooking. The paneer tikka masala is my favorite!"
-                            </p>
-                            <div className="flex text-yellow-400">
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                            </div>
-                        </motion.div>
-
-                        <motion.div
-                            className="bg-gray-50 p-6 rounded-xl shadow-sm"
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: 0.3, duration: 0.6 }}
-                        >
-                            <div className="flex items-center mb-4">
-                                <div className="w-10 h-10 rounded-full bg-green-200 flex items-center justify-center text-green-600 font-bold text-lg mr-3">
-                                    R
-                                </div>
-                                <div>
-                                    <h4 className="font-bold">Rahul Verma</h4>
-                                    <p className="text-gray-500 text-sm">IT Professional</p>
-                                </div>
-                            </div>
-                            <p className="text-gray-600 italic mb-4">
-                                "Their smoothies are perfect with my lunch. I've been ordering the protein shake with my meals every day for months."
-                            </p>
-                            <div className="flex text-yellow-400">
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                                <Heart className="fill-current h-4 w-4" />
-                            </div>
-                        </motion.div>
+                        <div className="space-y-24">
+                            {[
+                                {
+                                    title: "Transparent Pricing",
+                                    desc: "We show you the breakdown. Market cost + small service fee. No hidden markups, no surprise taxes.",
+                                    icon: Star,
+                                    color: "bg-yellow-100 text-yellow-700"
+                                },
+                                {
+                                    title: "Macro-Counted",
+                                    desc: "Every meal comes with a detailed nutritional breakdown. Protein, carbs, fats - we measure it all so you don't have to.",
+                                    icon: Flame,
+                                    color: "bg-orange-100 text-orange-700"
+                                },
+                                {
+                                    title: "Real Portions",
+                                    desc: "No more 'diet' portions that leave you hungry. Our standard meals are 450g-500g, designed to actually fuel an adult human.",
+                                    icon: ChefHat,
+                                    color: "bg-green-100 text-green-700"
+                                }
+                            ].map((feature, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ opacity: 0, y: 50 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true, margin: "-100px" }}
+                                    transition={{ duration: 0.5 }}
+                                    className="group"
+                                >
+                                    <div className={`w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                                        <feature.icon className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-3xl font-bold text-gray-900 mb-4">{feature.title}</h3>
+                                    <p className="text-lg text-gray-500 leading-relaxed">{feature.desc}</p>
+                                </motion.div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* CTA Section */}
-            <section className="py-12 bg-green-600 text-white">
-                <div className="container mx-auto px-4">
-                    <motion.div
-                        className="flex flex-col md:flex-row items-center justify-between"
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
+            {/* --- TESTIMONIALS (Horizontal Scroll) --- */}
+            <section className="py-32 bg-gray-900 text-white overflow-hidden">
+                <div className="container mx-auto px-4 mb-16 text-center">
+                    <h2 className="text-4xl font-bold mb-4">Don't just take our word for it</h2>
+                    <div className="flex justify-center gap-2 text-green-500">
+                        {[...Array(5)].map((_,i) => <Star key={i} className="fill-current w-5 h-5" />)}
+                    </div>
+                </div>
+                
+                <div className="relative w-full">
+                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-gray-900 to-transparent z-10" />
+                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-gray-900 to-transparent z-10" />
+                    
+                    <motion.div 
+                        className="flex gap-8 px-4"
+                        animate={{ x: ["0%", "-50%"] }}
+                        transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
+                        style={{ width: "fit-content" }}
                     >
-                        <div className="text-center md:text-left mb-6 md:mb-0">
-                            <h2 className="text-2xl md:text-3xl font-bold mb-3">Ready to Enjoy Honest Meals?</h2>
-                            <p className="text-lg opacity-90 max-w-lg">
-                                Download our app or order online for quick, healthy meals delivered to your doorstep.
-                            </p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-                            <Button
-                                className="bg-white hover:bg-opacity-90 text-green-600 rounded-full font-medium px-6 py-3"
-                                size="lg"
-                            >
-                                Order Online
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                            <Button
-                                className="bg-green-700 hover:bg-green-800 text-white rounded-full font-medium px-6 py-3"
-                                size="lg"
-                            >
-                                Download App
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </div>
+                        {[...Array(2)].map((_, setIndex) => (
+                            <React.Fragment key={setIndex}>
+                                {[
+                                    { text: "The protein portions are actually insane. I've stopped cooking entirely.", author: "Rahul K.", role: "Bodybuilder" },
+                                    { text: "Finally a service that doesn't hide taxes at checkout. What you see is what you pay.", author: "Priya M.", role: "Student" },
+                                    { text: "The smoothies are a lifesaver for my morning commute. Fresh and not sugary.", author: "Amit S.", role: "Developer" },
+                                    { text: "Honest Meals lives up to the name. Quality ingredients you can taste.", author: "Sarah J.", role: "Yoga Instructor" },
+                                ].map((t, i) => (
+                                    <div key={i} className="w-[400px] bg-gray-800/50 p-8 rounded-3xl border border-gray-700 flex-shrink-0">
+                                        <Quote className="w-8 h-8 text-green-500 mb-6 opacity-50" />
+                                        <p className="text-xl text-gray-300 mb-8 leading-relaxed">"{t.text}"</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500" />
+                                            <div>
+                                                <div className="font-bold">{t.author}</div>
+                                                <div className="text-sm text-gray-500">{t.role}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </React.Fragment>
+                        ))}
+                    </motion.div>
+                </div>
+            </section>
+
+            {/* --- FINAL CTA --- */}
+            <section className="relative py-32 bg-green-600 overflow-hidden">
+                <div className="absolute inset-0 bg-[url('/assets/pattern.svg')] opacity-10" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-gray-900 to-transparent opacity-20" />
+                
+                <div className="container mx-auto px-4 text-center relative z-10">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        whileInView={{ scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        <h2 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter">
+                            READY TO EAT?
+                        </h2>
+                        <p className="text-2xl text-green-100 mb-12 max-w-2xl mx-auto font-light">
+                            Your first honest meal is just a click away.
+                        </p>
+                        <Button 
+                            onClick={() => router.push('/meals')}
+                            className="h-24 px-16 rounded-full bg-white text-green-700 hover:bg-gray-100 font-black text-2xl shadow-2xl transition-transform hover:scale-105"
+                        >
+                            Get Started
+                        </Button>
                     </motion.div>
                 </div>
             </section>
