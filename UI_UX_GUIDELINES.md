@@ -11,7 +11,7 @@ This document serves as the source of truth for the design system of the Honest 
 *   **Vibrant & Engaging**: Use rich gradients for hero sections and colored shadows to create depth.
 
 ## 2. Color System
-
+ 
 We use Tailwind CSS classes.
 
 ### Primary Colors
