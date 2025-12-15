@@ -506,42 +506,60 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                 </div>
 
                 {/* Filter & Navigation Section */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              
-                    
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                        {/* Month Navigation */}
-                        <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-200">
-                            <Button variant="ghost" size="icon" onClick={handlePrevMonth} className="h-8 w-8 hover:bg-white hover:shadow-sm rounded-lg">
-                                <ChevronLeft className="h-4 w-4 text-gray-600" />
-                            </Button>
-                            <div className="px-3 font-bold text-gray-900 min-w-[90px] text-center text-sm">
-                                {monthNames[currentDate.getMonth()]}
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={handleNextMonth} disabled={isFutureDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="h-8 w-8 hover:bg-white hover:shadow-sm rounded-lg">
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
-                            </Button>
-                        </div>
+                <div className="flex items-center gap-3 mb-8">
+                    {/* Month Switcher */}
+                    <div className="flex-1 flex items-center justify-between bg-white rounded-2xl p-1 shadow-sm border border-gray-100">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handlePrevMonth}
+                            className="h-10 w-10 rounded-xl hover:bg-gray-50 text-gray-900 shrink-0"
+                        >
+                            <ChevronLeft className="h-5 w-5" strokeWidth={3} />
+                        </Button>
+                        <span className="text-base sm:text-lg font-bold text-gray-900 truncate px-1 text-center">
+                            {monthNames[currentDate.getMonth()]}
+                        </span>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleNextMonth}
+                            disabled={isFutureDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+                            className="h-10 w-10 rounded-xl hover:bg-gray-50 text-gray-900 disabled:opacity-30 shrink-0"
+                        >
+                            <ChevronRight className="h-5 w-5" strokeWidth={3} />
+                        </Button>
+                    </div>
 
-                        {/* Year Navigation */}
-                        <div className="flex items-center bg-gray-50 rounded-xl p-1 border border-gray-200">
-                            <Button variant="ghost" size="icon" onClick={handlePrevYear} className="h-8 w-8 hover:bg-white hover:shadow-sm rounded-lg">
-                                <ChevronLeft className="h-4 w-4 text-gray-600" />
-                            </Button>
-                            <div className="px-3 font-bold text-gray-900 min-w-[50px] text-center text-sm">
-                                {currentDate.getFullYear()}
-                            </div>
-                            <Button variant="ghost" size="icon" onClick={handleNextYear} disabled={isFutureDate(new Date(currentDate.getFullYear() + 1, 0, 1))} className="h-8 w-8 hover:bg-white hover:shadow-sm rounded-lg">
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
-                            </Button>
-                        </div>
+                    {/* Year Switcher */}
+                    <div className="w-[140px] flex items-center justify-between bg-white rounded-2xl p-1 shadow-sm border border-gray-100 shrink-0">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handlePrevYear}
+                            className="h-10 w-10 rounded-xl hover:bg-gray-50 text-gray-900 shrink-0"
+                        >
+                            <ChevronLeft className="h-5 w-5" strokeWidth={3} />
+                        </Button>
+                        <span className="text-base sm:text-lg font-bold text-gray-900 text-center flex-1">
+                            {currentDate.getFullYear()}
+                        </span>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleNextYear}
+                            disabled={isFutureDate(new Date(currentDate.getFullYear() + 1, 0, 1))}
+                            className="h-10 w-10 rounded-xl hover:bg-gray-50 text-gray-900 disabled:opacity-30 shrink-0"
+                        >
+                            <ChevronRight className="h-5 w-5" strokeWidth={3} />
+                        </Button>
                     </div>
                 </div>
 
                 {/* Monthly Calendar Grid */}
-                <div className="bg-white rounded-3xl shadow-xl p-4 sm:p-6 border border-gray-100">
+                <div className="bg-white rounded-3xl shadow-sm p-4 sm:p-6 border border-gray-100">
                     {/* Days Header */}
-                    <div className="grid grid-cols-7 gap-3 mb-4 text-center">
+                    <div className="grid grid-cols-7 gap-2 sm:gap-3 mb-4 text-center">
                         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
                             <div key={day} className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                 {day}
@@ -550,7 +568,7 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                     </div>
 
                     {/* Calendar Days */}
-                    <div className="grid grid-cols-7 gap-3">
+                    <div className="grid grid-cols-7 gap-2 sm:gap-3">
                         {getDaysInMonth().map((dateObj, index) => {
                             const dateKey = formatDateKey(dateObj.date);
                             const log = logs[dateKey];
@@ -559,43 +577,62 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                             const isCurrentMonth = dateObj.type === 'current';
                             const isToday = dateKey === formatDateKey(new Date());
 
+                            // Determine color styles based on category type
+                            const colorStyles = {
+                                cardio: 'bg-blue-50 border-blue-200 text-blue-700',
+                                flexibility: 'bg-blue-50 border-blue-200 text-blue-700',
+                                rest: 'bg-gray-100 border-gray-200 text-gray-500',
+                                strength: 'bg-orange-50 border-orange-200 text-orange-700',
+                                other: 'bg-purple-50 border-purple-200 text-purple-700'
+                            };
+
+                            const activeStyle = (category && category.type && colorStyles[category.type as keyof typeof colorStyles]) 
+                                ? colorStyles[category.type as keyof typeof colorStyles] 
+                                : colorStyles.strength;
+                            
+                            // Dynamic classes based on state
+                            const activeClass = log 
+                                ? activeStyle
+                                : 'bg-white border-gray-100 text-gray-700 hover:border-orange-200 hover:bg-orange-50';
+                                
+                            const todayClass = isToday ? 'ring-2 ring-orange-500 ring-offset-2 z-10' : '';
+                            const opacityClass = !isCurrentMonth ? 'opacity-25 grayscale' : '';
+                            const cursorClass = isFuture ? 'cursor-not-allowed opacity-40' : 'cursor-pointer hover:-translate-y-0.5 hover:shadow-md';
+
                             return (
-                                <motion.button
+                                <button
                                     key={`${dateKey}-${index}`}
-                                    whileHover={!isFuture ? { scale: 1.05 } : {}}
-                                    whileTap={!isFuture ? { scale: 0.95 } : {}}
                                     onClick={() => handleDayClick(dateObj.date)}
                                     disabled={isFuture}
                                     className={`
-                                        aspect-square rounded-xl flex flex-col items-center justify-center p-2 transition-all relative
-                                        ${!isCurrentMonth ? 'opacity-40 bg-gray-50' : ''}
-                                        ${isFuture ? 'cursor-not-allowed opacity-30 bg-gray-100' : 'cursor-pointer hover:shadow-md hover:bg-white'}
-                                        ${log 
-                                            ? 'bg-linear-to-br from-orange-100 to-orange-50 border-2 border-orange-200 shadow-md shadow-orange-100' 
-                                            : 'bg-gray-50 border-2 border-transparent hover:border-orange-200'
-                                        }
-                                        ${isToday ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
+                                        aspect-square rounded-2xl flex flex-col items-start justify-between p-1.5 sm:p-2 transition-all duration-200 relative border
+                                        ${activeClass}
+                                        ${todayClass}
+                                        ${opacityClass}
+                                        ${cursorClass}
                                     `}
                                 >
-                                    <span className={`text-xs font-bold mb-1 ${log ? 'text-orange-800' : 'text-gray-500'}`}>
+                                    <span className={`text-[10px] sm:text-xs font-bold ${isToday ? 'bg-orange-500 text-white px-1.5 py-0.5 rounded-md' : ''}`}>
                                         {dateObj.day}
                                     </span>
                                     
-                                    {log && category ? (
-                                        <div className="flex flex-col items-center w-full">
-                                            <div className="text-orange-600 mb-1">
+                                    {log && category && isCurrentMonth ? (
+                                        <div className="self-center flex flex-col items-center w-full mt-1">
+                                            <div className={`p-1 rounded-full bg-white/60 backdrop-blur-sm mb-1`}>
                                                 {getIcon(category.icon)}
                                             </div>
-                                            <span className="text-[10px] font-bold text-orange-800 truncate w-full text-center hidden sm:block">
+                                            <span className="text-[8px] sm:text-[10px] font-bold truncate w-full text-center leading-tight hidden sm:block">
                                                 {category.label.split(' ')[0]}
                                             </span>
                                         </div>
                                     ) : (
-                                        !isFuture && (
-                                            <div className="w-1 h-1 rounded-full bg-gray-200 mt-2" />
+                                        !isFuture && isCurrentMonth && !log && (
+                                            <div className="self-center w-full flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Plus className="h-4 w-4 text-gray-300" />
+                                            </div>
                                         )
                                     )}
-                                </motion.button>
+                                </button>
                             );
                         })}
                     </div>

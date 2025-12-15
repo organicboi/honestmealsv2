@@ -42,22 +42,73 @@ export async function getHealthDashboardData(): Promise<HealthDashboardData> {
 
   const today = new Date().toISOString().split('T')[0]
 
-  // 1. Fetch Daily Goals
-  const { data: goals } = await supabase
-    .from('daily_goals')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle()
+  // OPTIMIZED: Fetch all data in parallel using Promise.all
+  const [
+    { data: goals },
+    { data: foodLogs },
+    { data: waterLogs },
+    { data: streak },
+    { data: profile },
+    { data: nutritionGoals },
+    { data: weightLogs } // Fetch both in one query with ordering
+  ] = await Promise.all([
+    // 1. Daily Goals
+    supabase
+      .from('daily_goals')
+      .select('daily_calorie_goal, daily_protein_goal, daily_water_goal_ml')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    
+    // 2. Today's Food Logs
+    supabase
+      .from('food_logs')
+      .select('calories_consumed, protein_consumed, carbs_consumed, fat_consumed')
+      .eq('user_id', user.id)
+      .gte('consumed_at', `${today}T00:00:00`)
+      .lte('consumed_at', `${today}T23:59:59`),
+    
+    // 3. Today's Water Logs
+    supabase
+      .from('water_logs')
+      .select('amount_ml')
+      .eq('user_id', user.id)
+      .gte('logged_at', `${today}T00:00:00`)
+      .lte('logged_at', `${today}T23:59:59`),
+    
+    // 4. Streak
+    supabase
+      .from('user_streaks')
+      .select('current_streak, longest_streak')
+      .eq('customer_id', user.id)
+      .eq('streak_type', 'nutrition_goals')
+      .maybeSingle(),
+    
+    // 5. Profile
+    supabase
+      .from('profiles')
+      .select('weight, height, goal_aim, name')
+      .eq('id', user.id)
+      .maybeSingle(),
+    
+    // 6. Nutrition Goals
+    supabase
+      .from('nutrition_goals')
+      .select('target_weight')
+      .eq('customer_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle(),
+    
+    // 7. Weight Logs (both first and last in one query)
+    supabase
+      .from('weight_logs')
+      .select('weight, log_date')
+      .eq('user_id', user.id)
+      .order('log_date', { ascending: false })
+      .limit(2) // Get latest and potentially one more
+  ])
 
-  // 2. Fetch Today's Food Logs directly for real-time updates
-  const { data: foodLogs } = await supabase
-    .from('food_logs')
-    .select('calories_consumed, protein_consumed, carbs_consumed, fat_consumed')
-    .eq('user_id', user.id)
-    .gte('consumed_at', `${today}T00:00:00`)
-    .lte('consumed_at', `${today}T23:59:59`)
-
+  // Calculate nutrition totals
   const nutritionTotals = foodLogs?.reduce(
     (acc, log) => ({
       calories: acc.calories + (log.calories_consumed || 0),
@@ -68,58 +119,12 @@ export async function getHealthDashboardData(): Promise<HealthDashboardData> {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   ) || { calories: 0, protein: 0, carbs: 0, fat: 0 }
 
-  // 3. Fetch Water Intake (Sum of logs for today or from summary table)
-  // Using water_logs for real-time accuracy if summary isn't updated instantly
-  const { data: waterLogs } = await supabase
-    .from('water_logs')
-    .select('amount_ml')
-    .eq('user_id', user.id)
-    .gte('logged_at', `${today}T00:00:00`)
-    .lte('logged_at', `${today}T23:59:59`)
-
+  // Calculate water total
   const currentWater = waterLogs?.reduce((sum, log) => sum + log.amount_ml, 0) || 0
 
-  // 4. Fetch Streak
-  const { data: streak } = await supabase
-    .from('user_streaks')
-    .select('*')
-    .eq('customer_id', user.id)
-    .eq('streak_type', 'nutrition_goals') // Assuming this is the main one
-    .maybeSingle()
-
-  // 5. Fetch Weight/Profile
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('weight, height, goal_aim, name') 
-    .eq('id', user.id)
-    .maybeSingle()
-    
-  // Fetch target weight from nutrition_goals if available
-  const { data: nutritionGoals } = await supabase
-    .from('nutrition_goals')
-    .select('target_weight')
-    .eq('customer_id', user.id)
-    .eq('is_active', true)
-    .maybeSingle()
-
-  // 6. Fetch Start Weight (First log)
-  const { data: startWeightLog } = await supabase
-    .from('weight_logs')
-    .select('weight')
-    .eq('user_id', user.id)
-    .order('log_date', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  // 7. Fetch Latest Weight (Last log) to ensure we have the most recent data
-  // profiles.weight might be stale if not updated via triggers
-  const { data: latestWeightLog } = await supabase
-    .from('weight_logs')
-    .select('weight')
-    .eq('user_id', user.id)
-    .order('log_date', { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  // Extract latest and start weight from single query
+  const latestWeightLog = weightLogs?.[0]
+  const startWeightLog = weightLogs?.[weightLogs.length - 1]
 
   return {
     nutrition: {

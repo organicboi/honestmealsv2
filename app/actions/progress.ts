@@ -27,7 +27,7 @@ export async function getWeightHistory() {
 
   const { data, error } = await supabase
     .from('weight_logs')
-    .select('*')
+    .select('id, weight, log_date, created_at')
     .eq('user_id', user.id)
     .order('log_date', { ascending: true })
 
@@ -43,12 +43,27 @@ export async function getProgressPhotos() {
 
   const { data, error } = await supabase
     .from('progress_photos')
-    .select('*')
+    .select('id, image_url, weight, taken_at, notes, photo_type')
     .eq('user_id', user.id)
     .order('taken_at', { ascending: false })
 
   if (error) throw error
   return data as ProgressPhoto[]
+}
+
+// OPTIMIZED: Fetch both weight history and photos in parallel
+export async function getProgressData() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  const [weightHistory, progressPhotos] = await Promise.all([
+    getWeightHistory(),
+    getProgressPhotos()
+  ])
+
+  return { weightHistory, progressPhotos }
 }
 
 export async function logWeight(weight: number, date: string) {

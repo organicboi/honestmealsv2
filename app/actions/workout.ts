@@ -147,72 +147,67 @@ export async function saveWorkoutLog(input: SaveWorkoutInput) {
     
     if (error) throw error
   } else {
-    // Insert new
-    // Check if log already exists for this date (constraint)
-    const { data: existing } = await supabase
-        .from('workout_logs')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('log_date', input.date)
-        .single()
+    // Insert new - use upsert to handle duplicates in one call
+    const { data, error } = await supabase
+      .from('workout_logs')
+      .upsert({
+        ...logData,
+        user_id: user.id
+      }, {
+        onConflict: 'user_id,log_date', // Assuming you have a unique constraint on these
+        ignoreDuplicates: false
+      })
+      .select()
+      .single()
     
-    if (existing) {
-        // Update if exists (handle constraint violation gracefully)
-        logId = existing.id
-        const { error } = await supabase
-            .from('workout_logs')
-            .update(logData)
-            .eq('id', logId)
-        if (error) throw error
-    } else {
-        const { data, error } = await supabase
-        .from('workout_logs')
-        .insert(logData)
-        .select()
-        .single()
-        
-        if (error) throw error
-        logId = data.id
-    }
+    if (error) throw error
+    logId = data.id
   }
 
   if (!logId) throw new Error('Failed to get log ID')
 
-  // 2. Handle Exercises (Delete all and recreate strategy for simplicity)
-  // First, delete existing exercises for this log
+  // 2. Handle Exercises - OPTIMIZED: Delete all and batch insert
+  // First, delete existing exercises for this log (cascade deletes sets automatically)
   await supabase.from('workout_exercises').delete().eq('workout_log_id', logId)
 
-  // Insert new exercises
+  // Batch insert all exercises
   if (input.exercises.length > 0) {
-    for (let i = 0; i < input.exercises.length; i++) {
-      const ex = input.exercises[i]
-      const { data: exData, error: exError } = await supabase
-        .from('workout_exercises')
-        .insert({
-          workout_log_id: logId,
-          exercise_name: ex.name,
-          order_index: i
+    const exercisesData = input.exercises.map((ex, i) => ({
+      workout_log_id: logId,
+      exercise_name: ex.name,
+      order_index: i
+    }))
+
+    const { data: insertedExercises, error: exError } = await supabase
+      .from('workout_exercises')
+      .insert(exercisesData)
+      .select('id, order_index')
+    
+    if (exError) throw exError
+    if (!insertedExercises) throw new Error('Failed to insert exercises')
+
+    // Batch insert all sets at once
+    const allSetsData: any[] = []
+    insertedExercises.forEach((exData) => {
+      const exercise = input.exercises[exData.order_index]
+      if (exercise.sets.length > 0) {
+        exercise.sets.forEach((s, idx) => {
+          allSetsData.push({
+            workout_exercise_id: exData.id,
+            set_number: idx + 1,
+            weight_kg: s.weight || 0,
+            reps: s.reps || 0
+          })
         })
-        .select()
-        .single()
-
-      if (exError) throw exError
-
-      // Insert sets
-      if (ex.sets.length > 0) {
-        const setsData = ex.sets.map((s, idx) => ({
-          workout_exercise_id: exData.id,
-          set_number: idx + 1,
-          weight_kg: s.weight,
-          reps: s.reps
-        }))
-
-        const { error: setsError } = await supabase
-          .from('workout_sets')
-          .insert(setsData)
-        
-        if (setsError) throw setsError
       }
+    })
+
+    if (allSetsData.length > 0) {
+      const { error: setsError } = await supabase
+        .from('workout_sets')
+        .insert(allSetsData)
+      
+      if (setsError) throw setsError
     }
   }
 
