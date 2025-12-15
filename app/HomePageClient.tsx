@@ -17,6 +17,7 @@ import {
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import PincodeChecker from '@/components/ui/PincodeChecker';
 import backgroundVeg from '@/assets/images/homepage/bg-veg.jpg';
 import backgroundNonVeg from '@/assets/images/homepage/bg-non-veg.jpg';
 import backgroundHealthyDrinks from '@/app/bg-healthyDrinks.avif';
@@ -73,8 +74,8 @@ export default function HomePageClient({ user }: HomePageClientProps) {
 
                 <div className="relative z-10 container mx-auto px-4 flex-1 flex flex-col">
                     {/* Header */}
-                    <header className="flex justify-between items-center py-6">
-                        <div className="flex items-center">
+                    <header className="flex flex-col md:flex-row justify-between items-center py-4 md:py-6 gap-4 md:gap-0">
+                        <div className="w-full md:w-auto flex justify-center md:justify-start">
                             <div className="text-2xl font-bold text-green-600">Honest Meals</div>
                         </div>
                         <nav className="hidden md:flex space-x-8">
@@ -83,46 +84,12 @@ export default function HomePageClient({ user }: HomePageClientProps) {
                             <a href="#why-us" className="text-gray-600 hover:text-green-600 font-medium">Why Us</a>
                             <a href="#testimonials" className="text-gray-600 hover:text-green-600 font-medium">Reviews</a>
                         </nav>
-                        <div>
-                            {/* Auth display */}
-                            <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 w-full sm:w-auto">
-                                {!user ? (
-                                    <>
-                                        <Button
-                                            onClick={() => router.push("/sign-in")}
-                                            className="bg-green-600 hover:bg-green-700 text-white rounded-full w-full sm:w-auto transition duration-200"
-                                        >
-                                            Login
-                                        </Button>
-                                        <Button
-                                            onClick={() => router.push("/sign-up")}
-                                            className="bg-white border border-green-600 text-green-600 hover:bg-green-100 rounded-full w-full sm:w-auto transition duration-200"
-                                        >
-                                            Signup
-                                        </Button>
-                                    </>
-                                ) : (
-                                    <>
-                                        {/* Mobile: Plain icon only, no button capsule */}
-                                        <div
-                                            onClick={() => router.push("/profile")}
-                                            className="sm:hidden p-2 rounded-full hover:bg-green-100 cursor-pointer bg-white border border-green-600 text-green-600"
-                                        >
-                                            <User size={20} className="text-green-600" />
-                                        </div>
-
-                                        {/* Desktop: Styled button with email */}
-                                        <Button
-                                            onClick={() => router.push("/profile")}
-                                            className="hidden sm:flex bg-white border border-green-600 text-green-600 hover:bg-green-100 rounded-full w-full sm:w-auto transition duration-200 items-center space-x-2"
-                                        >
-                                            <span>{user.email}</span>
-                                        </Button>
-                                    </>
-                                )}
+                        <div className="w-full md:w-auto md:hidden">
+                            <div className="bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-green-100 py-2 px-4 flex justify-center items-center mx-auto max-w-xs">
+                                <PincodeChecker compact={true} />
                             </div>
                         </div>
-                    </header>
+                    </header> 
 
                     {/* About Us Section */}
                     <motion.section

@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { Profile } from '@/types/database.types';
+import { PincodeProvider } from '@/context/PincodeContext';
 
 const TopNav = dynamic(() => import('./TopNav'), { ssr: false });
 
@@ -11,5 +12,9 @@ interface TopNavClientProps {
 }
 
 export default function TopNavClient({ user, profile }: TopNavClientProps) {
-    return <TopNav user={user} profile={profile} />;
+    return (
+        <PincodeProvider user={user}>
+            <TopNav user={user} profile={profile} />
+        </PincodeProvider>
+    );
 }

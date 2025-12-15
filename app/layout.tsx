@@ -4,6 +4,8 @@ import "./globals.css";
 import BottomNavWrapper from "@/components/navigation/BottomNavWrapper";
 import TopNavWrapper from "@/components/navigation/TopNavWrapper";
 import { CartProvider } from "@/context/CartContext";
+import { PincodeProvider } from "@/context/PincodeContext";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,11 +33,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CartProvider>
-          <TopNavWrapper />
-          <div className="pb-16 md:pb-0">
-            {children}
-          </div>
-          <BottomNavWrapper />
+          <PincodeProvider>
+            <TopNavWrapper />
+            <div className="pb-16 md:pb-0">
+              {children}
+            </div>
+            <BottomNavWrapper />
+            <Toaster />
+          </PincodeProvider>
         </CartProvider>
       </body>
     </html>

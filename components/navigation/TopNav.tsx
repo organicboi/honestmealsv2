@@ -18,6 +18,8 @@ import Image from 'next/image';
 import { Profile } from '@/types/database.types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
+import { usePincode } from '@/context/PincodeContext';
+import PincodeChecker from '@/components/ui/PincodeChecker';
 
 import CartSheet from '@/components/cart/CartSheet';
 
@@ -29,6 +31,7 @@ interface TopNavProps {
 export default function TopNav({ user, profile }: TopNavProps) {
     const router = useRouter();
     const { cartTotalItems } = useCart();
+    const { currentPincode, isServiceable } = usePincode();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -84,52 +87,61 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                 />
                             </Link>
                             
-                            <div className="hidden md:flex items-center gap-2 text-sm text-gray-500 hover:text-green-600 cursor-pointer transition-colors max-w-[200px]">
-                                <MapPin className="h-4 w-4 shrink-0" />
-                                <span className="font-medium truncate underline decoration-dotted underline-offset-4">
-                                    {profile?.location || "Setup Location"}
-                                </span>
-                                <ChevronDown className="h-3 w-3 shrink-0" />
-                            </div>
+                            <PincodeChecker 
+                                compact={true} 
+                                className="hidden md:block max-w-[200px]" 
+                            />
                         </div>
 
-                        {/* Search Bar (Desktop) */}
-                        <div className="flex-1 max-w-xl relative hidden md:block">
-                            <form onSubmit={handleSearch}>
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <Input 
-                                    placeholder="Search for meals..." 
-                                    className="pl-10 bg-gray-100 border-none focus-visible:ring-green-500 rounded-xl h-11 w-full"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </form>
-                        </div>
+                        {/* Search Bar (Desktop) - Only for logged in users */}
+                        {user && (
+                            <div className="flex-1 max-w-xl relative hidden md:block">
+                                <form onSubmit={handleSearch}>
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Input 
+                                        placeholder="Search for meals..." 
+                                        className="pl-10 bg-gray-100 border-none focus-visible:ring-green-500 rounded-xl h-11 w-full"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                    />
+                                </form>
+                            </div>
+                        )}
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-3 md:gap-4">
-                            <div className="hidden md:flex items-center gap-6 text-gray-600 font-medium text-sm">
-                                <Link href="/ordermeals" className="hover:text-green-600 flex items-center gap-2">
-                                    <Search className="h-5 w-5 md:hidden" />
-                                    <span className="hidden md:inline">Search</span>
-                                </Link>
-                                <Link href="/offers" className="hover:text-green-600 flex items-center gap-2">
-                                    <span className="hidden md:inline">Offers</span>
-                                </Link>
-                            </div>
+                            {user && (
+                                <>
+                                    <div className="hidden md:flex items-center gap-6 text-gray-600 font-medium text-sm">
+                                        <Link href="/ordermeals" className="hover:text-green-600 flex items-center gap-2">
+                                            <Search className="h-5 w-5 md:hidden" />
+                                            <span className="hidden md:inline">Order Meals</span>
+                                        </Link>
+                                        <Link href="/health" className="hover:text-green-600 flex items-center gap-2">
+                                            <span className="hidden md:inline">Health</span>
+                                        </Link>
+                                        <Link href="/workout" className="hover:text-green-600 flex items-center gap-2">
+                                            <span className="hidden md:inline">Workout</span>
+                                        </Link>
+                                        <Link href="/offers" className="hover:text-green-600 flex items-center gap-2">
+                                            <span className="hidden md:inline">Offers</span>
+                                        </Link>
+                                    </div>
 
-                            <button 
-                                onClick={() => setIsCartOpen(true)}
-                                className="relative hover:bg-transparent hover:text-green-600 font-medium flex items-center gap-2 px-2 py-2 rounded-md transition-colors"
-                            >
-                                <ShoppingCart className="h-6 w-6 md:h-5 md:w-5" />
-                                <span className="hidden md:inline">Cart</span>
-                                {cartTotalItems > 0 && (
-                                    <span className="absolute top-0 right-0 md:-top-1 md:-right-2 bg-green-600 text-white text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full border-2 border-white">
-                                        {cartTotalItems}
-                                    </span>
-                                )}
-                            </button>
+                                    <button 
+                                        onClick={() => setIsCartOpen(true)}
+                                        className="relative hover:bg-transparent hover:text-green-600 font-medium flex items-center gap-2 px-2 py-2 rounded-md transition-colors"
+                                    >
+                                        <ShoppingCart className="h-6 w-6 md:h-5 md:w-5" />
+                                        <span className="hidden md:inline">Cart</span>
+                                        {cartTotalItems > 0 && (
+                                            <span className="absolute top-0 right-0 md:-top-1 md:-right-2 bg-green-600 text-white text-[10px] font-bold h-4 w-4 md:h-5 md:w-5 flex items-center justify-center rounded-full border-2 border-white">
+                                                {cartTotalItems}
+                                            </span>
+                                        )}
+                                    </button>
+                                </>
+                            )}
                             
                             {user ? (
                                 <Link href="/profile">
@@ -138,20 +150,29 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                     </div>
                                 </Link>
                             ) : (
-                                <Link href="/sign-in">
-                                    <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full px-6">
-                                        Sign In
-                                    </Button>
-                                </Link>
+                                <div className="flex items-center gap-3">
+                                    <Link href="/sign-in">
+                                        <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50 rounded-full px-4 py-2">
+                                            Sign In
+                                        </Button>
+                                    </Link>
+                                    <Link href="/sign-up">
+                                        <Button className="bg-green-600 hover:bg-green-700 text-white rounded-full px-4 py-2">
+                                            Sign Up
+                                        </Button>
+                                    </Link>
+                                </div>
                             )}
 
-                            {/* Mobile Menu Toggle */}
-                            <button 
-                                className="md:hidden p-2 text-gray-600"
-                                onClick={() => setIsMobileMenuOpen(true)}
-                            >
-                                <Menu className="h-6 w-6" />
-                            </button>
+                            {/* Mobile Menu Toggle - Only for logged in users */}
+                            {user && (
+                                <button 
+                                    className="md:hidden p-2 text-gray-600"
+                                    onClick={() => setIsMobileMenuOpen(true)}
+                                >
+                                    <Menu className="h-6 w-6" />
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -186,6 +207,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                             <div className="flex-1 p-5 overflow-y-auto space-y-6">
                                 <div className="space-y-4">
                                     <Link href="/ordermeals" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Order Meals</Link>
+                                    <Link href="/health" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Health Dashboard</Link>
+                                    <Link href="/workout" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Workout</Link>
                                     <Link href="/offers" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Offers</Link>
                                     <button 
                                         onClick={() => {
@@ -194,20 +217,12 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                         }} 
                                         className="block text-lg font-medium text-gray-800 text-left w-full"
                                     >
-                                        Cart
+                                        Cart {cartTotalItems > 0 && `(${cartTotalItems})`}
                                     </button>
                                     <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block text-lg font-medium text-gray-800">Profile</Link>
                                 </div>
 
-                                <div className="pt-6 border-t border-gray-100">
-                                    {!user && (
-                                        <Link href="/sign-in" onClick={() => setIsMobileMenuOpen(false)}>
-                                            <Button className="w-full bg-green-600 hover:bg-green-700 text-white rounded-xl py-6">
-                                                Log In / Sign Up
-                                            </Button>
-                                        </Link>
-                                    )}
-                                </div>
+                                {/* Auth section removed since mobile menu only shows for logged-in users */}
                             </div>
                         </motion.div>
                     </>
