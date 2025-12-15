@@ -6,6 +6,7 @@ import TopNavWrapper from "@/components/navigation/TopNavWrapper";
 import { CartProvider } from "@/context/CartContext";
 import { PincodeProvider } from "@/context/PincodeContext";
 import { Toaster } from "sonner";
+import AddToHomeScreen from "@/components/pwa/AddToHomeScreen";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
               {children}
             </div>
             <BottomNavWrapper />
+            <AddToHomeScreen />
             <Toaster />
           </PincodeProvider>
         </CartProvider>
