@@ -253,8 +253,7 @@ export async function saveCustomExercise(name: string) {
 
     const { error } = await supabase
         .from('user_custom_exercises')
-        .insert({ user_id: user.id, name })
-        .ignore() // Ignore if duplicate
+        .upsert({ user_id: user.id, name }, { ignoreDuplicates: true })
     
     if (error) console.error('Error saving custom exercise', error)
 }
