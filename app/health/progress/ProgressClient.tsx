@@ -28,7 +28,12 @@ import Link from 'next/link'
 import { WeightLog, ProgressPhoto, logWeight, addProgressPhoto, deleteProgressPhoto, updateProgressPhoto, deleteWeightLog, updateWeightLog, updateGoalWeight } from '@/app/actions/progress'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import dynamic from 'next/dynamic'
+
+const ProgressChart = dynamic(() => import('@/components/progress/ProgressChart'), { 
+  ssr: false, 
+  loading: () => <div className="h-full w-full bg-gray-50 flex items-center justify-center rounded-xl animate-pulse text-gray-400">Loading chart...</div> 
+})
 
 const MOTIVATIONAL_QUOTES = [
   "The only bad workout is the one that didn't happen.",
@@ -329,42 +334,8 @@ export default function ProgressClient({
               </div>
             </div>
 
-            <div className="h-56 w-full -ml-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#9ca3af' }} 
-                    dy={10}
-                    minTickGap={30}
-                  />
-                  <YAxis 
-                    domain={['dataMin - 2', 'dataMax + 2']} 
-                    hide 
-                  />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#059669', fontWeight: 'bold' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="weight" 
-                    stroke="#10b981" 
-                    strokeWidth={3}
-                    fillOpacity={1} 
-                    fill="url(#colorWeight)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+            <div className="h-56 w-full -ml-4 pl-4">
+              <ProgressChart data={chartData} />
             </div>
           </Card>
         </motion.div>

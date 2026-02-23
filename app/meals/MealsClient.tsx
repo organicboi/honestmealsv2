@@ -274,30 +274,34 @@ export default function MealsClient({
                     <motion.div 
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="bg-linear-to-br from-orange-400 to-red-500 rounded-3xl p-6 text-white shadow-lg shadow-orange-200 relative overflow-hidden"
+                        className="bg-gray-900 rounded-[2rem] p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden mb-6"
                     >
+                        <div className="absolute inset-0 bg-[url('/assets/pattern.svg')] opacity-10" />
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/20 rounded-full blur-3xl -mr-20 -mt-20" />
+                        
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
+                            <div className="flex justify-between items-start mb-6">
                                 <div>
-                                    <h2 className="text-2xl font-bold mb-1">Hungry?</h2>
-                                    <p className="text-orange-100 text-sm font-medium">Order fresh & healthy meals now.</p>
+                                    <h2 className="text-3xl sm:text-4xl font-black mb-2 tracking-tight leading-none">
+                                        CRAVING <br/><span className="text-green-500">REAL</span> FOOD?
+                                    </h2>
+                                    <p className="text-gray-300 text-sm font-medium max-w-[200px] sm:max-w-xs mt-3">
+                                        Chef-prepared, macro-counted meals.
+                                    </p>
                                 </div>
-                                <div className="bg-white/20 p-2 rounded-full backdrop-blur-sm">
-                                    <Utensils className="h-6 w-6 text-white" />
+                                <div className="bg-white/10 p-3 rounded-2xl backdrop-blur-md border border-white/20 shadow-xl shrink-0">
+                                    <Utensils className="h-6 w-6 text-green-400" />
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-white">
-                                    ⚡ 30 min delivery
+                            <div className="flex flex-wrap gap-2">
+                                <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                                    <Clock className="w-3 h-3 text-green-400" /> 30m
                                 </div>
-                                <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-medium text-white">
-                                    🥗 Fresh Ingredients
+                                <div className="bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 shadow-lg">
+                                    <Leaf className="w-3 h-3 text-green-400" /> Fresh
                                 </div>
                             </div>
                         </div>
-                        {/* Decorative circles */}
-                        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-                        <div className="absolute -top-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
                     </motion.div>
                 )}
 
@@ -316,7 +320,7 @@ export default function MealsClient({
                 </div>
 
                 {/* Meal Grid */}
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {filteredMeals.map((meal, index) => (
                         <motion.div
                             key={meal.id}
@@ -324,26 +328,27 @@ export default function MealsClient({
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.05 }}
                         >
-                            <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 bg-white rounded-3xl group">
-                                {/* Image Section - Full width on mobile for impact */}
-                                <div className="relative w-full h-48 bg-gray-100">
+                            <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 bg-white rounded-[2rem] group flex flex-col h-full">
+                                {/* Image Section */}
+                                <div className="relative w-full h-56 bg-gray-100 shrink-0">
                                     {meal.image_url ? (
                                         <Image 
                                             src={meal.image_url} 
                                             alt={meal.name}
                                             fill
                                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            className="object-cover transition-transform duration-700 group-hover:scale-105"
                                         />
                                     ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-6xl bg-gray-50">
+                                        <div className="w-full h-full flex items-center justify-center text-7xl bg-gray-50">
                                             {meal.food_type === 'vegetarian' ? '🥗' : '🍗'}
                                         </div>
                                     )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-80" />
                                     
                                     {/* Badges */}
-                                    <div className="absolute top-3 left-3 flex gap-2">
-                                        <Badge className={`backdrop-blur-md border-0 shadow-sm ${
+                                    <div className="absolute top-4 left-4 flex flex-col gap-2">
+                                        <Badge className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg backdrop-blur-md border-0 shadow-sm ${
                                             meal.food_type === 'vegetarian' 
                                                 ? 'bg-green-500/90 text-white' 
                                                 : 'bg-red-500/90 text-white'
@@ -351,53 +356,51 @@ export default function MealsClient({
                                             {meal.food_type === 'vegetarian' ? 'Veg' : 'Non-Veg'}
                                         </Badge>
                                         {meal.calories && (
-                                            <Badge variant="secondary" className="bg-white/90 backdrop-blur-md text-gray-700 border-0 shadow-sm">
-                                                <Flame className="h-3 w-3 text-orange-500 mr-1" />
+                                            <Badge variant="secondary" className="px-3 py-1 bg-white/90 backdrop-blur-md text-gray-900 border-0 shadow-sm rounded-lg text-[10px] font-bold uppercase tracking-widest flex items-center w-fit">
+                                                <Flame className="h-3 w-3 text-orange-500 mr-1.5" />
                                                 {meal.calories} cal
                                             </Badge>
                                         )}
                                     </div>
+                                    <div className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-md rounded-xl p-1.5 px-2 shadow-lg border border-white/30 text-white font-bold text-xs flex items-center gap-1.5">
+                                        <Star className="h-3.5 w-3.5 fill-current text-yellow-400" />
+                                        {meal.average_rating?.toFixed(1) || '4.5'}
+                                    </div>
                                 </div>
 
                                 {/* Content Section */}
-                                <div className="p-5">
-                                    <div className="flex justify-between items-start gap-2 mb-2">
-                                        <h3 className="text-lg font-bold text-gray-900 leading-tight">
-                                            {meal.name}
-                                        </h3>
-                                        <div className="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg text-amber-700 text-xs font-bold">
-                                            <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                                            <span>{meal.average_rating?.toFixed(1) || '4.5'}</span>
-                                        </div>
-                                    </div>
+                                <div className="p-6 flex flex-col flex-grow">
+                                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight mb-2">
+                                        {meal.name}
+                                    </h3>
                                     
-                                    <p className="text-sm text-gray-500 line-clamp-2 mb-4 leading-relaxed">
+                                    <p className="text-sm text-gray-500 line-clamp-2 mb-6 leading-relaxed flex-grow">
                                         {meal.description}
                                     </p>
 
                                     {/* Price & Action */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                                    <div className="flex items-end justify-between pt-4 border-t border-gray-100 mt-auto gap-4">
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-gray-400 font-medium uppercase">Price</span>
-                                            <span className="text-xl font-bold text-gray-900">
+                                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Price</span>
+                                            <span className="text-2xl sm:text-3xl font-black text-gray-900 leading-none">
                                                 ₹{meal.price}
                                             </span>
                                         </div>
 
                                         {getCartQty(meal.id) > 0 ? (
-                                            <div className="flex items-center gap-3 bg-green-50 rounded-2xl px-3 py-1.5 border border-green-100 shadow-sm">
+                                            <div className="flex items-center gap-3 bg-green-50 rounded-2xl px-3 py-2 border border-green-100 shadow-sm">
                                                 <button
                                                     onClick={() => removeFromCart(meal.id)}
-                                                    className="p-1.5 hover:bg-green-200 rounded-xl transition-colors text-green-700"
+                                                    className="p-1.5 hover:bg-green-200 rounded-xl transition-colors text-green-700 active:scale-95"
                                                 >
                                                     <Minus className="h-4 w-4" />
                                                 </button>
-                                                <span className="font-bold text-green-700 text-base min-w-6 text-center">
+                                                <span className="font-bold text-green-700 text-lg min-w-[1.5rem] text-center">
                                                     {getCartQty(meal.id)}
                                                 </span>
                                                 <button
                                                     onClick={() => addToCart(meal)}
-                                                    className="p-1.5 hover:bg-green-200 rounded-xl transition-colors text-green-700"
+                                                    className="p-1.5 hover:bg-green-200 rounded-xl transition-colors text-green-700 active:scale-95"
                                                     disabled={!meal.is_available}
                                                 >
                                                     <Plus className="h-4 w-4" />
@@ -406,7 +409,7 @@ export default function MealsClient({
                                         ) : (
                                             <Button
                                                 onClick={() => addToCart(meal)}
-                                                className="h-11 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold shadow-lg shadow-green-200 px-6 transition-all active:scale-95"
+                                                className="h-12 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black shadow-lg shadow-green-200 px-6 transition-all active:scale-95 uppercase tracking-wider text-xs"
                                                 disabled={!meal.is_available}
                                             >
                                                 Add to Cart

@@ -21,7 +21,9 @@ import { useCart } from '@/context/CartContext';
 import { usePincode } from '@/context/PincodeContext';
 import PincodeChecker from '@/components/ui/PincodeChecker';
 
-import CartSheet from '@/components/cart/CartSheet';
+import dynamic from 'next/dynamic';
+
+const CartSheet = dynamic(() => import('@/components/cart/CartSheet'), { ssr: false });
 
 interface TopNavProps {
     user: any;

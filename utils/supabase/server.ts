@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -28,6 +29,14 @@ export async function createClient() {
     }
   );
 }
+
+// Cached version of getUser to dramatically reduce database calls down to 1 per request
+// By using React.cache, all subsequent calls across nested server components re-use the DB result
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.getUser();
+  return { user: data?.user || null, error };
+});
 
 // Anonymous client for cached queries (no cookies required)
 // Use this for public read-only data that doesn't need authentication

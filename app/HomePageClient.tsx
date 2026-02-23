@@ -107,11 +107,11 @@ export default function HomePageClient({ user }: { user: any }) {
             <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
                 <motion.div style={{ scale }} className="absolute inset-0 z-0">
                     <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/20 to-white z-10" />
-                    <Image src={heroBg} alt="Hero" fill className="object-cover" priority />
+                    <Image src={heroBg} alt="Hero" fill className="object-cover" priority sizes="100vw" placeholder="blur" />
                 </motion.div>
 
-                <div className="relative z-20 container mx-auto px-4">
-                    <div className="max-w-5xl mx-auto text-center">
+                <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-end pb-24 md:justify-center md:pb-0">
+                    <div className="max-w-5xl mx-auto text-left md:text-center w-full">
                         <motion.div
                             initial={{ opacity: 0, y: 50 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -119,28 +119,27 @@ export default function HomePageClient({ user }: { user: any }) {
                         >
                             
                             
-                            <h1 className="text-6xl md:text-9xl font-black text-white mb-8 tracking-tighter leading-[0.9]">
+                            <h1 className="text-7xl sm:text-8xl md:text-9xl font-black text-white mb-6 md:mb-8 tracking-tighter leading-[0.9]">
                                 EAT <span className="text-green-500">REAL.</span><br />
                                 LIVE <span className="italic font-serif font-light text-white/90">BETTER.</span>
                             </h1>
                             
-                            <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-                                No hidden fees. No tiny portions. <br/>
+                            <p className="text-lg md:text-2xl text-gray-200 mb-8 md:mb-12 max-w-2xl md:mx-auto font-light leading-relaxed">
+                                No hidden fees. No tiny portions. <br className="hidden md:block"/>
                                 Just honest food for honest people.
                             </p>
                             
-                            <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
+                            <div className="flex flex-col sm:flex-row gap-6 justify-start md:justify-center items-start md:items-center w-full">
                                 <Button 
                                     onClick={() => router.push('/meals')}
-                                    className="h-16 px-12 rounded-full bg-green-600 hover:bg-green-500 text-white font-bold text-lg shadow-2xl shadow-green-900/50 transition-all hover:scale-105 hover:shadow-green-500/30"
+                                    className="h-16 px-12 w-full sm:w-auto rounded-full bg-green-600 hover:bg-green-500 text-white font-bold text-lg shadow-2xl shadow-green-900/50 transition-all hover:scale-105 hover:shadow-green-500/30"
                                 >
                                     Order Now
                                 </Button>
                                 <div className="flex items-center gap-4 text-white/80">
                                     <div className="flex -space-x-3">
                                         {[1,2,3].map(i => (
-                                            <div key={i} className="w-10 h-10 rounded-full bg-gray-200 border-2 border-black flex items-center justify-center text-xs font-bold text-black">
-                                                {String.fromCharCode(64+i)}
+                                            <div key={i} className="w-10 h-10 rounded-full bg-gray-200 border-2 border-black flex items-center justify-center text-xs font-bold text-black" style={{ backgroundImage: `url('https://i.pravatar.cc/100?img=${i}')`, backgroundSize: 'cover' }}>
                                             </div>
                                         ))}
                                     </div>
@@ -189,63 +188,66 @@ export default function HomePageClient({ user }: { user: any }) {
                         </Button>
                     </div>
 
-                    {/* Mobile: Horizontal Scroll Snap */}
-                    <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory flex gap-4 pb-8 scrollbar-hide">
+                    {/* Mobile: Vertical Stacked Bento Grid */}
+                    <div className="md:hidden flex flex-col gap-4">
                         {/* Veg Card Mobile */}
-                        <div className="snap-center shrink-0 w-[85vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg" onClick={() => router.push('/meals?diet=veg')}>
-                            <Image src={bgVeg} alt="Veg" fill className="object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                            <div className="absolute bottom-0 left-0 p-6 w-full">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <span className="px-3 py-1 rounded-full bg-green-500 text-white text-[10px] font-bold uppercase tracking-wider">Bestseller</span>
-                                    <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider">₹60</span>
-                                </div>
-                                <h3 className="text-4xl font-bold text-white mb-2">Vegetarian</h3>
-                                <p className="text-gray-300 text-sm line-clamp-2">Wholesome, plant-based meals rich in fiber and essential nutrients.</p>
-                                <div className="mt-4 flex items-center text-green-400 text-sm font-bold">
-                                    Tap to Explore <ArrowRight className="w-4 h-4 ml-1" />
+                        <div className="relative w-full h-[320px] rounded-[1.5rem] overflow-hidden shadow-md group active:scale-[0.98] transition-all" onClick={() => router.push('/meals?diet=veg')}>
+                            <Image src={bgVeg} alt="Veg" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                            <div className="absolute top-4 left-4 flex gap-2">
+                                <span className="px-3 py-1 bg-green-500 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg backdrop-blur-md">Bestseller</span>
+                                <span className="px-3 py-1 bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg backdrop-blur-md">₹60</span>
+                            </div>
+                            <div className="absolute bottom-0 left-0 p-5 w-full">
+                                <h3 className="text-4xl font-black text-white leading-none mb-1">Vegetarian</h3>
+                                <p className="text-gray-300 text-xs line-clamp-2 mb-3 pr-8">High fiber, pure plant power.</p>
+                                <div className="flex items-center text-green-400 text-xs font-bold uppercase tracking-widest">
+                                    Tap to Explore <ArrowRight className="w-3 h-3 ml-1" />
                                 </div>
                             </div>
                         </div>
 
                         {/* Non-Veg Card Mobile */}
-                        <div className="snap-center shrink-0 w-[85vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg" onClick={() => router.push('/meals?diet=non-veg')}>
-                            <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                            <div className="absolute bottom-0 left-0 p-6 w-full">
-                                <div className="flex justify-between items-end mb-2">
-                                    <h3 className="text-3xl font-bold text-white">Non-Veg</h3>
-                                    <span className="text-white font-bold text-xl">₹85</span>
-                                </div>
-                                <p className="text-gray-300 text-sm mb-4">High protein, premium cuts for muscle gain.</p>
-                                <div className="flex items-center text-red-400 text-sm font-bold">
-                                    Tap to Explore <ArrowRight className="w-4 h-4 ml-1" />
+                        <div className="relative w-full h-[240px] rounded-[1.5rem] overflow-hidden shadow-md active:scale-[0.98] transition-all" onClick={() => router.push('/meals?diet=non-veg')}>
+                            <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                            <div className="absolute top-4 right-4 flex gap-2">
+                                <span className="px-3 py-1 bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg backdrop-blur-md">₹85</span>
+                            </div>
+                            <div className="absolute bottom-0 left-0 p-5 w-full">
+                                <h3 className="text-3xl font-black text-white leading-none mb-1">Non-Veg</h3>
+                                <p className="text-gray-300 text-xs mb-3">Premium protein cuts.</p>
+                                <div className="flex items-center text-red-400 text-xs font-bold uppercase tracking-widest">
+                                    Tap to Explore <ArrowRight className="w-3 h-3 ml-1" />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Drinks Card Mobile */}
-                        <div className="snap-center shrink-0 w-[70vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg bg-blue-950" onClick={() => router.push('/meals?diet=healthy-drinks')}>
-                            <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-80" />
-                            <div className="absolute inset-0 bg-blue-900/40 mix-blend-multiply" />
-                            <div className="absolute inset-0 flex flex-col justify-end p-6">
-                                <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-4">
-                                    <Coffee className="w-6 h-6 text-white" />
+                        {/* 2-Column Split */}
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Drinks Card Mobile */}
+                            <div className="relative w-full h-[180px] rounded-[1.5rem] overflow-hidden shadow-md bg-blue-950 active:scale-[0.98] transition-all flex flex-col justify-end" onClick={() => router.push('/meals?diet=healthy-drinks')}>
+                                <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-60" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
+                                <div className="absolute inset-0 bg-blue-900/40 mix-blend-multiply" />
+                                <div className="relative z-10 p-4">
+                                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center mb-2">
+                                        <Coffee className="w-4 h-4 text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-white leading-none">Elixirs</h3>
+                                    <p className="text-blue-200 text-[10px] mt-1">Detox Drinks</p>
                                 </div>
-                                <h3 className="text-3xl font-bold text-white mb-1">Elixirs</h3>
-                                <p className="text-blue-100 text-sm">Detox & Energy drinks.</p>
                             </div>
-                        </div>
 
-                        {/* Custom Card Mobile */}
-                        <div className="snap-center shrink-0 w-[70vw] h-[500px] relative rounded-[2rem] overflow-hidden shadow-lg bg-gray-900" onClick={() => router.push('/customize-meal')}>
-                            <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-50" />
-                            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-                                <div className="w-16 h-16 rounded-full border-2 border-white/30 flex items-center justify-center mb-4 text-white">
-                                    <ChefHat className="w-8 h-8" />
+                            {/* Custom Card Mobile */}
+                            <div className="relative w-full h-[180px] rounded-[1.5rem] overflow-hidden shadow-md bg-gray-900 active:scale-[0.98] transition-all flex flex-col justify-end" onClick={() => router.push('/customize-meal')}>
+                                <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-40" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
+                                <div className="relative z-10 p-4">
+                                    <div className="w-8 h-8 rounded-full bg-white/10 border border-white/20 backdrop-blur-md flex items-center justify-center mb-2">
+                                        <ChefHat className="w-4 h-4 text-white" />
+                                    </div>
+                                    <h3 className="text-xl font-black text-white leading-none">Custom</h3>
+                                    <p className="text-gray-300 text-[10px] mt-1">Build your own</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-white">Custom</h3>
-                                <p className="text-gray-400 text-sm mt-2">Build your own meal plan.</p>
                             </div>
                         </div>
                     </div>
@@ -255,7 +257,7 @@ export default function HomePageClient({ user }: { user: any }) {
                         {/* Main Feature - Veg */}
                         <div className="col-span-7 h-full">
                             <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group" onClick={() => router.push('/meals?diet=veg')}>
-                                <Image src={bgVeg} alt="Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                                <Image src={bgVeg} alt="Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-70 transition-opacity" />
                                 <div className="absolute bottom-0 left-0 p-12 w-full">
                                     <div className="flex items-center gap-3 mb-4">
@@ -275,7 +277,7 @@ export default function HomePageClient({ user }: { user: any }) {
                             {/* Non-Veg */}
                             <div className="flex-1">
                                 <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group" onClick={() => router.push('/meals?diet=non-veg')}>
-                                    <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" />
+                                    <Image src={bgNonVeg} alt="Non-Veg" fill className="object-cover transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 50vw" placeholder="blur" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                                     <div className="absolute bottom-0 left-0 p-8 w-full">
                                         <div className="flex justify-between items-end">
@@ -292,7 +294,7 @@ export default function HomePageClient({ user }: { user: any }) {
                             {/* Split Row */}
                             <div className="flex-1 grid grid-cols-2 gap-6">
                                 <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group bg-blue-950" onClick={() => router.push('/meals?diet=healthy-drinks')}>
-                                    <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-80 transition-transform duration-700 group-hover:scale-110" />
+                                    <Image src={bgDrinks} alt="Drinks" fill className="object-cover opacity-80 transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 25vw" placeholder="blur" />
                                     <div className="absolute inset-0 bg-blue-900/30 mix-blend-multiply" />
                                     <div className="absolute inset-0 flex flex-col justify-between p-6">
                                         <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
@@ -306,7 +308,7 @@ export default function HomePageClient({ user }: { user: any }) {
                                 </TiltCard>
 
                                 <TiltCard className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-xl cursor-pointer group bg-gray-900" onClick={() => router.push('/customize-meal')}>
-                                    <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-50 transition-transform duration-700 group-hover:scale-110" />
+                                    <Image src={bgCustom} alt="Custom" fill className="object-cover opacity-50 transition-transform duration-700 group-hover:scale-110" sizes="(max-width: 768px) 100vw, 25vw" placeholder="blur" />
                                     <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
                                         <div className="w-14 h-14 rounded-full border-2 border-white/30 flex items-center justify-center mb-4 group-hover:border-green-500 group-hover:text-green-500 text-white transition-colors">
                                             <ChefHat className="w-6 h-6" />
@@ -322,25 +324,25 @@ export default function HomePageClient({ user }: { user: any }) {
             </section>
 
             {/* --- STICKY FEATURES SECTION --- */}
-            <section className="py-32 bg-white">
+            <section className="py-20 md:py-32 bg-white">
                 <div className="container mx-auto px-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
-                        <div className="lg:sticky lg:top-32 h-fit">
-                            <span className="text-green-600 font-bold tracking-widest uppercase text-sm mb-4 block">The Honest Difference</span>
-                            <h2 className="text-5xl md:text-7xl font-black text-gray-900 mb-8 leading-tight">
-                                WE DON'T <br/>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+                        <div className="lg:sticky lg:top-32 h-fit text-center md:text-left">
+                            <span className="text-green-600 font-bold tracking-widest uppercase text-xs md:text-sm mb-3 md:mb-4 block">The Honest Difference</span>
+                            <h2 className="text-4xl sm:text-5xl md:text-7xl font-black text-gray-900 mb-6 md:mb-8 leading-tight">
+                                WE DON'T <br className="hidden md:block"/>
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-emerald-800">HIDE</span> ANYTHING.
                             </h2>
-                            <p className="text-xl text-gray-500 mb-12 leading-relaxed max-w-md">
+                            <p className="text-base md:text-xl text-gray-500 mb-8 md:mb-12 leading-relaxed max-w-md mx-auto md:mx-0">
                                 Most delivery apps hide fees and shrink portions. We do the opposite. 
                                 See exactly what you're paying for and exactly what you're eating.
                             </p>
-                            <Button size="lg" className="rounded-full px-8 bg-gray-900 text-white hover:bg-gray-800">
+                            <Button size="lg" className="rounded-full px-8 bg-gray-900 text-white hover:bg-gray-800 w-full sm:w-auto h-14">
                                 Read Our Manifesto
                             </Button>
                         </div>
 
-                        <div className="space-y-24">
+                        <div className="space-y-12 md:space-y-24 mt-8 md:mt-0">
                             {[
                                 {
                                     title: "Transparent Pricing",
@@ -363,17 +365,17 @@ export default function HomePageClient({ user }: { user: any }) {
                             ].map((feature, i) => (
                                 <motion.div 
                                     key={i}
-                                    initial={{ opacity: 0, y: 50 }}
+                                    initial={{ opacity: 0, y: 30 }}
                                     whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, margin: "-100px" }}
+                                    viewport={{ once: true, margin: "-50px" }}
                                     transition={{ duration: 0.5 }}
-                                    className="group"
+                                    className="group flex flex-col items-center md:block md:items-start text-center md:text-left"
                                 >
-                                    <div className={`w-16 h-16 rounded-2xl ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                                        <feature.icon className="w-8 h-8" />
+                                    <div className={`w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl ${feature.color} flex items-center justify-center mb-4 md:mb-6 md:group-hover:scale-110 transition-transform duration-300`}>
+                                        <feature.icon className="w-7 h-7 md:w-8 md:h-8" />
                                     </div>
-                                    <h3 className="text-3xl font-bold text-gray-900 mb-4">{feature.title}</h3>
-                                    <p className="text-lg text-gray-500 leading-relaxed">{feature.desc}</p>
+                                    <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2 md:mb-4">{feature.title}</h3>
+                                    <p className="text-sm md:text-lg text-gray-500 leading-relaxed max-w-sm md:max-w-none">{feature.desc}</p>
                                 </motion.div>
                             ))}
                         </div>
@@ -382,20 +384,20 @@ export default function HomePageClient({ user }: { user: any }) {
             </section>
 
             {/* --- TESTIMONIALS (Horizontal Scroll) --- */}
-            <section className="py-32 bg-gray-900 text-white overflow-hidden">
-                <div className="container mx-auto px-4 mb-16 text-center">
-                    <h2 className="text-4xl font-bold mb-4">Don't just take our word for it</h2>
+            <section className="py-20 md:py-32 bg-gray-900 text-white overflow-hidden">
+                <div className="container mx-auto px-4 mb-12 md:mb-16 text-center">
+                    <h2 className="text-3xl md:text-4xl font-bold mb-4">Don't just take our word for it</h2>
                     <div className="flex justify-center gap-2 text-green-500">
-                        {[...Array(5)].map((_,i) => <Star key={i} className="fill-current w-5 h-5" />)}
+                        {[...Array(5)].map((_,i) => <Star key={i} className="fill-current w-4 h-4 md:w-5 md:h-5" />)}
                     </div>
                 </div>
                 
                 <div className="relative w-full">
-                    <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-gray-900 to-transparent z-10" />
-                    <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-gray-900 to-transparent z-10" />
+                    <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-gray-900 to-transparent z-10" />
+                    <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-gray-900 to-transparent z-10" />
                     
                     <motion.div 
-                        className="flex gap-8 px-4"
+                        className="flex gap-6 md:gap-8 px-4"
                         animate={{ x: ["0%", "-50%"] }}
                         transition={{ repeat: Infinity, duration: 40, ease: "linear" }}
                         style={{ width: "fit-content" }}
@@ -408,14 +410,14 @@ export default function HomePageClient({ user }: { user: any }) {
                                     { text: "The smoothies are a lifesaver for my morning commute. Fresh and not sugary.", author: "Amit S.", role: "Developer" },
                                     { text: "Honest Meals lives up to the name. Quality ingredients you can taste.", author: "Sarah J.", role: "Yoga Instructor" },
                                 ].map((t, i) => (
-                                    <div key={i} className="w-[400px] bg-gray-800/50 p-8 rounded-3xl border border-gray-700 flex-shrink-0">
-                                        <Quote className="w-8 h-8 text-green-500 mb-6 opacity-50" />
-                                        <p className="text-xl text-gray-300 mb-8 leading-relaxed">"{t.text}"</p>
+                                    <div key={i} className="w-[85vw] sm:w-[350px] md:w-[400px] bg-gray-800/50 p-6 md:p-8 rounded-3xl border border-gray-700 flex-shrink-0">
+                                        <Quote className="w-6 h-6 md:w-8 md:h-8 text-green-500 mb-4 md:mb-6 opacity-50" />
+                                        <p className="text-lg md:text-xl text-gray-300 mb-6 md:mb-8 leading-relaxed">"{t.text}"</p>
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500" />
+                                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-green-400 to-blue-500" />
                                             <div>
-                                                <div className="font-bold">{t.author}</div>
-                                                <div className="text-sm text-gray-500">{t.role}</div>
+                                                <div className="font-bold text-sm md:text-base">{t.author}</div>
+                                                <div className="text-xs md:text-sm text-gray-500">{t.role}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -427,25 +429,25 @@ export default function HomePageClient({ user }: { user: any }) {
             </section>
 
             {/* --- FINAL CTA --- */}
-            <section className="relative py-32 bg-green-600 overflow-hidden">
+            <section className="relative py-24 md:py-32 bg-green-600 overflow-hidden">
                 <div className="absolute inset-0 bg-[url('/assets/pattern.svg')] opacity-10" />
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-gray-900 to-transparent opacity-20" />
+                <div className="absolute top-0 left-0 w-full h-24 md:h-32 bg-gradient-to-b from-gray-900 to-transparent opacity-20" />
                 
                 <div className="container mx-auto px-4 text-center relative z-10">
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0 }}
+                        initial={{ scale: 0.95, opacity: 0 }}
                         whileInView={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h2 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter">
+                        <h2 className="text-5xl md:text-8xl font-black text-white mb-4 md:mb-8 tracking-tighter">
                             READY TO EAT?
                         </h2>
-                        <p className="text-2xl text-green-100 mb-12 max-w-2xl mx-auto font-light">
+                        <p className="text-lg md:text-2xl text-green-100 mb-10 md:mb-12 max-w-2xl mx-auto font-light leading-snug">
                             Your first honest meal is just a click away.
                         </p>
                         <Button 
                             onClick={() => router.push('/meals')}
-                            className="h-24 px-16 rounded-full bg-white text-green-700 hover:bg-gray-100 font-black text-2xl shadow-2xl transition-transform hover:scale-105"
+                            className="h-16 md:h-24 px-10 md:px-16 w-full sm:w-auto rounded-full bg-white text-green-700 hover:bg-gray-100 font-black text-xl md:text-2xl shadow-2xl transition-transform hover:scale-105"
                         >
                             Get Started
                         </Button>

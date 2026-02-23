@@ -6,12 +6,10 @@ import { Mail, Lock, ArrowRight, Loader2, AlertCircle, User, CheckCircle } from 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { signup } from '@/app/actions/auth';
+import { signInWithMagicLink } from '@/app/actions/auth';
 
 export default function SignUpPage() {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
@@ -23,27 +21,14 @@ export default function SignUpPage() {
         setError(null);
         setSuccess(false);
 
-        // Validation
-        if (password !== confirmPassword) {
-            setError('Passwords do not match');
-            setIsLoading(false);
-            return;
-        }
-
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters long');
-            setIsLoading(false);
-            return;
-        }
-
         const formData = new FormData(e.currentTarget);
         
         try {
-            const result = await signup(formData);
+            const result = await signInWithMagicLink(formData);
             
             if (result?.error) {
                 setError(result.error);
-            } else {
+            } else if (result?.success) {
                 setSuccess(true);
             }
         } catch (err) {
@@ -90,8 +75,8 @@ export default function SignUpPage() {
                         >
                             <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                             <div>
-                                <p className="text-sm text-green-600 font-medium">Account created successfully!</p>
-                                <p className="text-xs text-green-600 mt-1">Check your email to verify your account.</p>
+                                <p className="text-sm text-green-600 font-medium">Check your email!</p>
+                                <p className="text-xs text-green-600 mt-1">We've sent you a magic link to sign in safely.</p>
                             </div>
                         </motion.div>
                     )}
@@ -130,47 +115,6 @@ export default function SignUpPage() {
                             </div>
                         </div>
 
-                        {/* Password Input */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                            <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
-                        </div>
-
-                        {/* Confirm Password Input */}
-                        <div>
-                            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                                Confirm Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    id="confirmPassword"
-                                    name="confirmPassword"
-                                    type="password"
-                                    required
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
-
                         {/* Terms and Conditions */}
                         <div className="flex items-start">
                             <input
@@ -201,11 +145,11 @@ export default function SignUpPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Creating account...
+                                    Sending Link...
                                 </>
                             ) : (
                                 <>
-                                    Create Account
+                                    Send Magic Link
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </>
                             )}

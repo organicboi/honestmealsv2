@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 
 export interface CartItem {
     id: string;
@@ -25,6 +25,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const [items, setItems] = useState<CartItem[]>([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     // Load cart from local storage on mount
     useEffect(() => {
@@ -36,12 +37,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 console.error('Failed to parse cart from local storage', e);
             }
         }
+        setIsLoaded(true);
     }, []);
 
-    // Save cart to local storage whenever it changes
+    // Save cart to local storage whenever it changes, debounced
     useEffect(() => {
-        localStorage.setItem('honest_meals_cart', JSON.stringify(items));
-    }, [items]);
+        if (!isLoaded) return;
+        
+        const timeoutId = setTimeout(() => {
+            localStorage.setItem('honest_meals_cart', JSON.stringify(items));
+        }, 300);
+        
+        return () => clearTimeout(timeoutId);
+    }, [items, isLoaded]);
 
     const addToCart = (newItem: Omit<CartItem, 'quantity'>) => {
         setItems(prevItems => {
@@ -77,8 +85,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
     };
 
-    const cartTotalItems = items.reduce((total, item) => total + item.quantity, 0);
-    const cartTotalPrice = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const cartTotalItems = useMemo(() => items.reduce((total, item) => total + item.quantity, 0), [items]);
+    const cartTotalPrice = useMemo(() => items.reduce((total, item) => total + (item.price * item.quantity), 0), [items]);
 
     return (
         <CartContext.Provider value={{ 
@@ -101,3 +109,4 @@ export function useCart() {
     }
     return context;
 }
+

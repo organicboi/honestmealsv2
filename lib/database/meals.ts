@@ -2,66 +2,75 @@ import { createClient, createAnonymousClient } from '@/utils/supabase/server';
 import { unstable_cache } from 'next/cache';
 import type { Meal, MealWithDetails, MealCategory, DietaryType } from '@/types/database.types';
 
-export async function getMeals(options?: {
+export const getMeals = async (options?: {
   foodType?: 'vegetarian' | 'non-vegetarian';
   categoryId?: string;
   dietaryTypeId?: string;
   isAvailable?: boolean;
   isFeatured?: boolean;
   limit?: number;
-}) {
-  const supabase = await createClient();
-  
-  let query = supabase
-    .from('meals')
-    .select(`
-      *,
-      meal_categories (
-        id,
-        name,
-        description
-      ),
-      dietary_types (
-        id,
-        name,
-        description
-      )
-    `)
-    .order('created_at', { ascending: false });
+}) => {
+  const fetchMeals = unstable_cache(
+    async (optsStr: string) => {
+      const opts = JSON.parse(optsStr);
+      const supabase = createAnonymousClient();
+      
+      let query = supabase
+        .from('meals')
+        .select(`
+          *,
+          meal_categories (
+            id,
+            name,
+            description
+          ),
+          dietary_types (
+            id,
+            name,
+            description
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-  if (options?.foodType) {
-    query = query.eq('food_type', options.foodType);
-  }
+      if (opts?.foodType) {
+        query = query.eq('food_type', opts.foodType);
+      }
 
-  if (options?.categoryId) {
-    query = query.eq('category_id', options.categoryId);
-  }
+      if (opts?.categoryId) {
+        query = query.eq('category_id', opts.categoryId);
+      }
 
-  if (options?.dietaryTypeId) {
-    query = query.eq('dietary_type_id', options.dietaryTypeId);
-  }
+      if (opts?.dietaryTypeId) {
+        query = query.eq('dietary_type_id', opts.dietaryTypeId);
+      }
 
-  if (options?.isAvailable !== undefined) {
-    query = query.eq('is_available', options.isAvailable);
-  }
+      if (opts?.isAvailable !== undefined) {
+        query = query.eq('is_available', opts.isAvailable);
+      }
 
-  if (options?.isFeatured !== undefined) {
-    query = query.eq('is_featured', options.isFeatured);
-  }
+      if (opts?.isFeatured !== undefined) {
+        query = query.eq('is_featured', opts.isFeatured);
+      }
 
-  if (options?.limit) {
-    query = query.limit(options.limit);
-  }
+      if (opts?.limit) {
+        query = query.limit(opts.limit);
+      }
 
-  const { data, error } = await query;
+      const { data, error } = await query;
 
-  if (error) {
-    console.error('Error fetching meals:', error);
-    return [];
-  }
+      if (error) {
+        console.error('Error fetching meals:', error);
+        return [];
+      }
 
-  return data as MealWithDetails[];
-}
+      return data as MealWithDetails[];
+    },
+    ['meals-list'],
+    { revalidate: 60, tags: ['meals'] }
+  );
+
+  return fetchMeals(JSON.stringify(options || {}));
+};
 
 export async function getMealById(mealId: string) {
   const supabase = await createClient();

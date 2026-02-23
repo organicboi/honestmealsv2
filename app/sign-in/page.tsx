@@ -6,13 +6,13 @@ import { Mail, Lock, ArrowRight, Loader2, AlertCircle, CheckCircle } from 'lucid
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { login } from '@/app/actions/auth';
+import { signInWithMagicLink } from '@/app/actions/auth';
 
 export default function SignInPage() {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -23,10 +23,12 @@ export default function SignInPage() {
         const formData = new FormData(e.currentTarget);
         
         try {
-            const result = await login(formData);
+            const result = await signInWithMagicLink(formData);
             
             if (result?.error) {
                 setError(result.error);
+            } else if (result?.success) {
+                setSuccess(true);
             }
         } catch (err) {
             setError('An unexpected error occurred');
@@ -63,6 +65,21 @@ export default function SignInPage() {
                         <p className="text-gray-600">Sign in to continue to your account</p>
                     </div>
 
+                    {/* Success Message */}
+                    {success && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start"
+                        >
+                            <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="text-sm text-green-600 font-medium">Check your email!</p>
+                                <p className="text-xs text-green-600 mt-1">We've sent you a magic link to sign in safely.</p>
+                            </div>
+                        </motion.div>
+                    )}
+
                     {/* Error Message */}
                     {error && (
                         <motion.div
@@ -97,47 +114,6 @@ export default function SignInPage() {
                             </div>
                         </div>
 
-                        {/* Password Input */}
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    id="password"
-                                    name="password"
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Forgot Password Link */}
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <input
-                                    id="remember-me"
-                                    name="remember-me"
-                                    type="checkbox"
-                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                />
-                                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                                    Remember me
-                                </label>
-                            </div>
-                            <Link
-                                href="/forgot-password"
-                                className="text-sm text-green-600 hover:text-green-700 font-medium"
-                            >
-                                Forgot password?
-                            </Link>
-                        </div>
-
                         {/* Submit Button */}
                         <Button
                             type="submit"
@@ -147,17 +123,16 @@ export default function SignInPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Signing in...
+                                    Sending Link...
                                 </>
                             ) : (
                                 <>
-                                    Sign In
+                                    Send Magic Link
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </>
                             )}
                         </Button>
                     </form>
-
                     {/* Divider */}
                     <div className="mt-6 relative">
                         <div className="absolute inset-0 flex items-center">
@@ -203,6 +178,7 @@ export default function SignInPage() {
                             Sign up for free
                         </Link>
                     </p>
+
                 </div>
 
                 {/* Back to Home */}
