@@ -1,6 +1,6 @@
 'use client';
 
-import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard } from 'lucide-react';
+import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ const baseNavItems: NavItem[] = [
     { label: 'Meals', href: '/meals', icon: Utensils },
     { label: 'Health', href: '/health', icon: Activity },
     { label: 'Workout', href: '/workout', icon: Dumbbell },
+    { label: 'Strava', href: '/strava', icon: Zap },
 ];
 
 // Role-specific navigation items (shown in addition to base items)

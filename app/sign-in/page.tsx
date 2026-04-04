@@ -4,14 +4,20 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { signInWithMagicLink } from '@/app/actions/auth';
+import { signInWithPassword, signInWithGoogle } from '@/app/actions/auth';
+import { Suspense } from 'react';
 
-export default function SignInPage() {
+function SignInContent() {
+    const searchParams = useSearchParams();
+    const urlError = searchParams?.get('error');
+
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(urlError || null);
     const [success, setSuccess] = useState(false);
     const router = useRouter();
 
@@ -23,13 +29,12 @@ export default function SignInPage() {
         const formData = new FormData(e.currentTarget);
         
         try {
-            const result = await signInWithMagicLink(formData);
+            const result = await signInWithPassword(formData);
             
             if (result?.error) {
                 setError(result.error);
-            } else if (result?.success) {
-                setSuccess(true);
             }
+            // On success, server action redirects to /meals
         } catch (err) {
             setError('An unexpected error occurred');
         } finally {
@@ -74,8 +79,7 @@ export default function SignInPage() {
                         >
                             <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
                             <div>
-                                <p className="text-sm text-green-600 font-medium">Check your email!</p>
-                                <p className="text-xs text-green-600 mt-1">We've sent you a magic link to sign in safely.</p>
+                                <p className="text-sm text-green-600 font-medium">Signed in!</p>
                             </div>
                         </motion.div>
                     )}
@@ -114,6 +118,39 @@ export default function SignInPage() {
                             </div>
                         </div>
 
+                        {/* Password Input */}
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                                    Password
+                                </label>
+                                <Link href="/forgot-password" className="text-xs text-green-600 hover:text-green-700">
+                                    Forgot password?
+                                </Link>
+                            </div>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    required
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full pl-10 pr-16 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600"
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? 'Hide' : 'Show'}
+                                </button>
+                            </div>
+                        </div>
+
                         {/* Submit Button */}
                         <Button
                             type="submit"
@@ -123,11 +160,11 @@ export default function SignInPage() {
                             {isLoading ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Sending Link...
+                                    Signing In...
                                 </>
                             ) : (
                                 <>
-                                    Send Magic Link
+                                    Sign In
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </>
                             )}
@@ -147,6 +184,7 @@ export default function SignInPage() {
                     <div className="mt-6 grid grid-cols-1 gap-3">
                         <button
                             type="button"
+                            onClick={async () => { await signInWithGoogle(); }}
                             className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all"
                         >
                             <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
@@ -189,5 +227,17 @@ export default function SignInPage() {
                 </div>
             </motion.div>
         </div>
+    );
+}
+
+export default function SignInPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-green-50">
+                <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+            </div>
+        }>
+            <SignInContent />
+        </Suspense>
     );
 }

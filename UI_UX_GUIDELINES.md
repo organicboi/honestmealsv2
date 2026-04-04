@@ -15,12 +15,12 @@ This document serves as the source of truth for the design system of the Honest 
 We use Tailwind CSS classes.
 
 ### Primary Colors
-*   **Brand Green**: `bg-green-600` (Primary Actions), `text-green-700` (Text Highlights), `bg-green-50` (Light Backgrounds).
+*   **Brand Green (Lime)**: `bg-lime-400` / `bg-lime-500` (Primary Actions), `text-lime-600` (Text Highlights), `bg-lime-50` (Light Backgrounds). Uses Tailwind's built-in lime colors.
 *   **Brand Orange**: `bg-orange-500` (Calories/Food), `text-orange-600`.
 *   **Brand Blue**: `bg-blue-500` (Hydration), `text-blue-600`.
 
 ### Gradients (Hero Sections)
-*   **Green (Progress/General)**: `bg-linear-to-br from-green-500 to-emerald-700`.
+*   **Green (Progress/General)**: `bg-linear-to-br from-lime-400 to-lime-600`.
 *   **Orange (Calories/Food)**: `bg-linear-to-br from-orange-400 to-red-500`.
 *   **Blue (Hydration)**: `bg-linear-to-br from-blue-400 to-blue-600`.
 
