@@ -10,12 +10,19 @@ export default async function AskMePage() {
         redirect('/sign-in');
     }
 
-    // Fetch initial data server-side to avoid client-side waterfalls and
-    // prevent the Supabase token-refresh cookie cycle that loops RSC refetches.
-    const [initialChats, initialCredits] = await Promise.all([
-        getChats(),
-        getUserCredits(),
-    ]);
+    // Fetch initial data server-side to avoid client-side waterfalls.
+    // Wrapped in try/catch: if these fail during the RSC re-render triggered
+    // by a Server Action POST, the page must not crash with a 500.
+    let initialChats: any[] = [];
+    let initialCredits = 0;
+    try {
+        [initialChats, initialCredits] = await Promise.all([
+            getChats(),
+            getUserCredits(),
+        ]);
+    } catch {
+        // Non-fatal — client will see empty state and can still chat
+    }
 
     return (
         <GymnaClientWrapper

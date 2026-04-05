@@ -21,8 +21,11 @@ export async function getChats() {
         .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+    if (error) {
+        console.error('getChats error:', error);
+        return [];
+    }
+    return data ?? [];
 }
 
 export async function getChatMessages(chatId: string) {
@@ -74,7 +77,7 @@ export async function sendMessage(chatId: string, content: string) {
 
     if (!process.env.GEMINI_API_KEY) {
         console.error("GEMINI_API_KEY is missing");
-        throw new Error('Service configuration error');
+        throw new Error('AI service is not configured. Please contact support.');
     }
 
     // 1. Check credits
@@ -89,7 +92,7 @@ export async function sendMessage(chatId: string, content: string) {
         .update({ gymna_credits: credits - 1 })
         .eq('id', user.id);
 
-    if (creditError) throw creditError;
+    if (creditError) throw new Error('Failed to deduct credit. Please try again.');
 
     try {
         // Get history for context BEFORE inserting the new message
