@@ -56,7 +56,7 @@ export default function GeneratingOverlay({ planType }: GeneratingOverlayProps) 
                 
                 {/* Subtitle */}
                 <p className="text-gray-600 mb-6">
-                    Please wait while Gymna creates your personalized plan. This may take a moment...
+                    Please wait while Honest Ask creates your personalized plan. This may take a moment...
                 </p>
 
                 {/* Spinner */}

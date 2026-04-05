@@ -139,7 +139,7 @@ You do not need to remember if you were improving. The data tells you.
 
 ---
 
-### 5. Gymna — AI Health Coach
+### 5. Honest Ask — AI Health Coach
 
 An AI assistant built into the platform. Not a chatbot. A plan generator.
 

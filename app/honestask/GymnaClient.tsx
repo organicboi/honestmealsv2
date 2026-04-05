@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 import { 
     Send, Plus, MessageSquare, Trash2, Zap, 
     Dumbbell, Utensils, X, Activity, TrendingUp, ArrowRight,
@@ -16,14 +17,14 @@ import { toast } from "sonner";
 import { 
     getChatMessages, createChat, 
     sendMessage, getUserCredits, deleteChat,
-    sendDialogueMessage, getPlanData
+    getPlanData
 } from '@/app/actions/gymna';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { PlanType, DialogueResponse, DietPlanData, WorkoutPlanData } from '@/types/gymna.types';
 import DialogueFlow from '@/components/gymna/DialogueFlow';
 import DietPlanTable from '@/components/gymna/DietPlanTable';
 import WorkoutPlanTable from '@/components/gymna/WorkoutPlanTable';
-import GeneratingOverlay from '@/components/gymna/GeneratingOverlay';
+import { useNavVisibility } from '@/context/NavVisibilityContext';
 
 interface Chat {
     id: string;
@@ -69,7 +70,7 @@ const ROUTE_ICON: Record<string, React.ReactNode> = {
     '/health':   <Activity className="h-3.5 w-3.5" />,
     '/workout':  <Dumbbell className="h-3.5 w-3.5" />,
     '/progress': <TrendingUp className="h-3.5 w-3.5" />,
-    '/askme':    <Sparkles className="h-3.5 w-3.5" />,
+    '/honestask':    <Sparkles className="h-3.5 w-3.5" />,
 };
 
 // ─── Markdown renderer ──────────────────────────────────────────
@@ -178,6 +179,45 @@ function formatRelativeTime(dateStr: string) {
     return `${diffDays}d ago`;
 }
 
+// ─── Build a natural-language prompt from dialogue responses ─────────────────
+function buildPlanPrompt(planType: PlanType, responses: DialogueResponse[]): string {
+    const get = (id: string): string => {
+        const r = responses.find(r => r.questionId === id);
+        if (!r) return 'Not specified';
+        if (Array.isArray(r.answer)) {
+            const arr = r.answer as string[];
+            return arr.length === 0 || (arr.length === 1 && arr[0] === 'None') ? 'None' : arr.filter(v => v !== 'None').join(', ');
+        }
+        return String(r.answer) || 'Not specified';
+    };
+
+    if (planType === 'diet') {
+        return `Please generate a detailed, personalised diet plan for me. Include meal timings, food items with quantities, and macros (calories, protein, carbs, fat) for each meal, plus daily totals, hydration advice, and practical guidelines.
+
+My details:
+- Dietary preference: ${get('preference')}
+- Primary goal: ${get('goal')}
+- Age: ${get('age')} years
+- Weight: ${get('weight')} kg
+- Height: ${get('height')} cm
+- Activity level: ${get('activityLevel')}
+- Food allergies/restrictions: ${get('allergies')}
+- Preferred cuisine: ${get('cuisine')}
+- Meals per day: ${get('mealsPerDay')}`;
+    } else {
+        return `Please generate a detailed, personalised workout plan for me. Include exercises with sets, reps, rest times, and progression tips for each session.
+
+My details:
+- Fitness goal: ${get('goal')}
+- Experience level: ${get('experience')}
+- Available equipment: ${get('equipment')}
+- Days per week: ${get('daysPerWeek')}
+- Session duration: ${get('sessionDuration')}
+- Injuries/limitations: ${get('injuries')}
+- Focus areas: ${get('focusAreas')}`;
+    }
+}
+
 interface GymnaClientProps {
     user: any;
     initialChats: Chat[];
@@ -193,17 +233,24 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
     const [credits, setCredits] = useState(initialCredits);
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
-    const [generating, setGenerating] = useState(false);
-    const [currentPlanType, setCurrentPlanType] = useState<PlanType | null>(null);
+    const [thinkingPhrase, setThinkingPhrase] = useState('');
     // Mobile: sidebar shown as a drawer
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showDialogue, setShowDialogue] = useState(false);
     const [selectedPlanType, setSelectedPlanType] = useState<PlanType | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    // Prevents the currentChatId useEffect from re-fetching when we've already
+    // set messages optimistically during a send operation.
+    const skipNextLoad = useRef(false);
+    const { navVisible } = useNavVisibility();
 
     useEffect(() => {
         if (currentChatId) {
+            if (skipNextLoad.current) {
+                skipNextLoad.current = false;
+                return;
+            }
             loadMessages(currentChatId);
             loadPlanData(currentChatId);
         } else {
@@ -215,6 +262,27 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, sending]);
+
+    // Cycle through contextual phrases while the AI is thinking
+    useEffect(() => {
+        if (!sending) { setThinkingPhrase(''); return; }
+        const phrases = [
+            'Analysing your request…',
+            'Crunching your macros…',
+            'Consulting the nutrition science…',
+            'Building your personalised plan…',
+            'Checking calorie targets…',
+            'Optimising your macros…',
+            'Almost there…',
+        ];
+        let i = 0;
+        setThinkingPhrase(phrases[0]);
+        const timer = setInterval(() => {
+            i = (i + 1) % phrases.length;
+            setThinkingPhrase(phrases[i]);
+        }, 2200);
+        return () => clearInterval(timer);
+    }, [sending]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -344,51 +412,69 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
 
     const handleDialogueComplete = async (responses: DialogueResponse[]) => {
         setShowDialogue(false);
-        setGenerating(true);
-        setCurrentPlanType(selectedPlanType);
+        const planType = selectedPlanType;
+        setSelectedPlanType(null);
+        if (!planType) return;
+
+        // Build a natural-language prompt from the form responses and run it
+        // through exactly the same flow as handleSendMessage.
+        const prompt = buildPlanPrompt(planType, responses);
+
+        setSending(true);
+        setSidebarOpen(false);
+
+        const tempUserMsg: Message = {
+            id: 'temp-' + Date.now(),
+            role: 'user',
+            content: prompt,
+            type: 'text',
+            created_at: new Date().toISOString(),
+        };
 
         try {
             let chatId = currentChatId;
             if (!chatId) {
-                const planTitle = selectedPlanType === 'diet' ? 'Diet Plan' : 'Workout Plan';
+                const planTitle = planType === 'diet' ? 'Diet Plan' : 'Workout Plan';
                 const newChat = await createChat(planTitle);
                 setChats(prev => [newChat, ...prev]);
+                skipNextLoad.current = true;
                 setCurrentChatId(newChat.id);
                 chatId = newChat.id;
             }
 
-            const result = await sendDialogueMessage(chatId!, selectedPlanType!, responses);
+            setMessages(prev => [...prev, tempUserMsg]);
 
-            if (result.success) {
-                toast.success('Plan generated successfully! 🎉');
-                if (chatId) {
-                    const [updatedMsgs, updatedPlans, newCredits] = await Promise.all([
-                        getChatMessages(chatId),
-                        getPlanData(chatId),
-                        getUserCredits()
-                    ]);
-                    setMessages(updatedMsgs as any);
-                    setPlanData(updatedPlans as any);
-                    setCredits(newCredits);
-                }
-            }
+            await sendMessage(chatId!, prompt);
+
+            const [updatedMsgs, newCredits] = await Promise.all([
+                getChatMessages(chatId!),
+                getUserCredits(),
+            ]);
+            setMessages(updatedMsgs as any);
+            setCredits(newCredits);
+            setChats(prev => prev.map(c => c.id === chatId ? { ...c, updated_at: new Date().toISOString() } : c));
         } catch (error: any) {
             console.error('Error generating plan:', error);
             toast.error(error.message || 'Failed to generate plan');
+            setMessages(prev => prev.filter(m => m.id !== tempUserMsg.id));
+            if (currentChatId) loadMessages(currentChatId);
         } finally {
-            setGenerating(false);
-            setCurrentPlanType(null);
-            setSelectedPlanType(null);
+            setSending(false);
         }
     };
 
     const currentChat = chats.find(c => c.id === currentChatId);
-    const hasConversation = currentChatId !== null;
+    // Show conversation view as soon as we're sending (even before chatId is assigned)
+    const hasConversation = currentChatId !== null || sending;
     const visibleMessages = messages.filter(msg => msg.type !== 'plan_json');
 
     return (
-        // Full-screen container; pb-24 on mobile accounts for the bottom nav
-        <div className="flex h-dvh bg-gray-50 overflow-hidden relative">
+        // Full-screen container; height adjusts when bottom nav auto-hides
+        <div className={cn(
+            'flex bg-gray-50 overflow-hidden relative transition-[height] duration-300 ease-in-out',
+            'md:h-dvh', // desktop: nav is always hidden, always full height
+            navVisible ? 'h-[calc(100dvh-4rem)]' : 'h-dvh' // mobile: dynamic
+        )}>
 
             {/* --- Dialogue & Generating Overlays --- */}
             <AnimatePresence>
@@ -400,8 +486,6 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                     />
                 )}
             </AnimatePresence>
-
-            {generating && currentPlanType && <GeneratingOverlay planType={currentPlanType} />}
 
             {/* --- Mobile Sidebar Backdrop --- */}
             <AnimatePresence>
@@ -435,7 +519,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                 <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
                                     <Bot className="h-4 w-4 text-white" />
                                 </div>
-                                <span className="font-bold text-gray-900">Gymna AI</span>
+                                <span className="font-bold text-gray-900">Honest Ask</span>
                             </div>
                             <button
                                 onClick={() => setSidebarOpen(false)}
@@ -571,7 +655,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                     <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
                         <Bot className="h-4 w-4 text-white" />
                     </div>
-                    <span className="font-bold text-gray-900">Gymna AI</span>
+                    <span className="font-bold text-gray-900">Honest Ask</span>
                 </div>
                 {/* New Chat */}
                 <div className="p-3 flex-shrink-0">
@@ -708,7 +792,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                     )}
                     <div className="flex-1 min-w-0">
                         <h2 className="font-semibold text-gray-900 text-sm truncate">
-                            {currentChat?.title || 'Gymna AI'}
+                            {currentChat?.title || 'Honest Ask'}
                         </h2>
                         {!hasConversation && (
                             <p className="text-xs text-gray-400 hidden md:block">Your personal AI fitness & nutrition coach</p>
@@ -751,7 +835,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-200 mb-5">
                                 <Sparkles className="h-8 w-8 text-white" />
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Welcome to Gymna AI</h1>
+                            <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Welcome to Honest Ask</h1>
                             <p className="text-sm text-gray-500 mb-8 max-w-xs">
                                 Your personal AI fitness & nutrition coach. Ask anything or generate a customized plan.
                             </p>
@@ -865,22 +949,24 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                     <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center flex-shrink-0 mt-1">
                                         <Bot className="h-3.5 w-3.5 text-white" />
                                     </div>
-                                    <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-1.5">
-                                        <motion.span
-                                            className="w-2 h-2 bg-orange-400 rounded-full"
-                                            animate={{ y: [0, -4, 0] }}
-                                            transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                                        />
-                                        <motion.span
-                                            className="w-2 h-2 bg-orange-400 rounded-full"
-                                            animate={{ y: [0, -4, 0] }}
-                                            transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }}
-                                        />
-                                        <motion.span
-                                            className="w-2 h-2 bg-orange-400 rounded-full"
-                                            animate={{ y: [0, -4, 0] }}
-                                            transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }}
-                                        />
+                                    <div className="bg-white border border-gray-100 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
+                                        <div className="flex items-center gap-1.5 mb-1.5">
+                                            <motion.span className="w-2 h-2 bg-orange-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
+                                            <motion.span className="w-2 h-2 bg-orange-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />
+                                            <motion.span className="w-2 h-2 bg-orange-400 rounded-full" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.3 }} />
+                                        </div>
+                                        <AnimatePresence mode="wait">
+                                            <motion.p
+                                                key={thinkingPhrase}
+                                                initial={{ opacity: 0, y: 4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -4 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="text-xs text-gray-400 italic"
+                                            >
+                                                {thinkingPhrase}
+                                            </motion.p>
+                                        </AnimatePresence>
                                     </div>
                                 </div>
                             )}
@@ -921,7 +1007,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                     handleSendMessage();
                                 }
                             }}
-                            placeholder="Ask Gymna anything... (Enter to send)"
+                            placeholder="Ask Honest Ask anything... (Enter to send)"
                             rows={1}
                             className="flex-1 bg-transparent resize-none outline-none text-sm text-gray-800 placeholder-gray-400 py-1.5 min-h-[36px] max-h-[160px]"
                             disabled={sending}
@@ -942,7 +1028,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                         </button>
                     </div>
                     <p className="text-center text-xs text-gray-400 mt-1.5">
-                        1 credit per message • Gymna can make mistakes
+                        1 credit per message • Honest Ask can make mistakes
                     </p>
                 </div>
             </div>

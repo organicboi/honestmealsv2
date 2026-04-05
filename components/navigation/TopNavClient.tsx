@@ -15,8 +15,8 @@ interface TopNavClientProps {
 export default function TopNavClient({ user, profile }: TopNavClientProps) {
     const pathname = usePathname();
 
-    // Hide TopNav on /askme route to provide a full-screen Chat UI
-    if (pathname?.startsWith('/askme')) {
+    // Hide TopNav on /honestask route to provide a full-screen Chat UI
+    if (pathname?.startsWith('/honestask')) {
         return null;
     }
 

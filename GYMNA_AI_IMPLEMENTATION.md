@@ -1,7 +1,7 @@
-# Gymna AI - Complete Implementation Summary
+# Honest Ask AI - Complete Implementation Summary
 
 ## 🎯 Overview
-This document outlines the complete implementation of the Gymna AI dialogue-based plan generation system with structured JSON responses and beautiful table displays.
+This document outlines the complete implementation of the Honest Ask AI dialogue-based plan generation system with structured JSON responses and beautiful table displays.
 
 ---
 
@@ -23,7 +23,7 @@ This document outlines the complete implementation of the Gymna AI dialogue-base
   - Back/Next navigation
   - Final "Generate Plan" action
 - ✅ Automatic prompt compilation from user responses
-- ✅ Questions defined in `types/gymna.types.ts`:
+- ✅ Questions defined in `types/Honest Ask.types.ts`:
   - **Diet Plan**: 8 questions (preference, goal, weight, height, activity, allergies, cuisine, meals/day)
   - **Workout Plan**: 7 questions (goal, experience, equipment, days/week, duration, injuries, focus areas)
 
@@ -38,9 +38,9 @@ This document outlines the complete implementation of the Gymna AI dialogue-base
 - ✅ Following UI/UX guidelines with gradients and card designs
 
 ### **Phase 4: Database Integration and Data Persistence** ✓
-- ✅ New table: `gymna_plan_data`
+- ✅ New table: `Honest Ask_plan_data`
   - Stores: `raw_json`, `parsed_data`, `plan_type`, `metadata`
-  - Foreign keys to `gymna_chats`, `gymna_messages`, `auth.users`
+  - Foreign keys to `Honest Ask_chats`, `Honest Ask_messages`, `auth.users`
   - Row Level Security (RLS) policies
 - ✅ Server actions: `sendDialogueMessage()`, `getPlanData()`
 - ✅ Automatic saving of JSON data after AI response
@@ -53,15 +53,15 @@ This document outlines the complete implementation of the Gymna AI dialogue-base
 
 ### **1. Database Migration**
 ```
-database/migrations/009_gymna_plan_storage.sql
+database/migrations/009_Honest Ask_plan_storage.sql
 ```
-- Creates `gymna_plan_data` table
+- Creates `Honest Ask_plan_data` table
 - Sets up indexes for performance
 - Configures RLS policies
 
 ### **2. Type Definitions**
 ```
-types/gymna.types.ts
+types/Honest Ask.types.ts
 ```
 - `PlanType`, `DialogueQuestion`, `DialogueResponse`
 - `DietPlanData` - Complete diet plan structure
@@ -70,24 +70,24 @@ types/gymna.types.ts
 
 ### **3. UI Components**
 ```
-components/gymna/DialogueFlow.tsx
-components/gymna/DietPlanTable.tsx
-components/gymna/WorkoutPlanTable.tsx
-components/gymna/GeneratingOverlay.tsx
+components/Honest Ask/DialogueFlow.tsx
+components/Honest Ask/DietPlanTable.tsx
+components/Honest Ask/WorkoutPlanTable.tsx
+components/Honest Ask/GeneratingOverlay.tsx
 ```
 
 ---
 
 ## 🔄 Modified Files
 
-### **1. Server Actions** - `app/actions/gymna.ts`
+### **1. Server Actions** - `app/actions/Honest Ask.ts`
 Added functions:
 - `compilePromptFromDialogue()` - Converts dialogue responses to AI prompt
 - `parseAIResponse()` - Extracts JSON from AI response
 - `sendDialogueMessage()` - New dialogue-based message flow
 - `getPlanData()` - Retrieve saved plan data from database
 
-### **2. Main Client** - `app/askme/GymnaClient.tsx`
+### **2. Main Client** - `app/askme/Honest AskClient.tsx`
 Major changes:
 - Integrated `DialogueFlow`, `GeneratingOverlay`, and plan table components
 - New state management for dialogue flow and generation status
@@ -153,19 +153,19 @@ Deduct Credit → Call Gemini AI (with JSON instructions)
   ↓
 Receive Raw Response → Parse JSON
   ↓
-Save to gymna_messages (raw text)
+Save to Honest Ask_messages (raw text)
   ↓
-Save to gymna_plan_data (JSON + parsed data)
+Save to Honest Ask_plan_data (JSON + parsed data)
   ↓
 Display Plan in Beautiful Tables
 ```
 
 ### **Database Structure**
 ```
-gymna_chats (1) ─→ (many) gymna_messages
-                 └→ (many) gymna_plan_data
+Honest Ask_chats (1) ─→ (many) Honest Ask_messages
+                 └→ (many) Honest Ask_plan_data
                  
-gymna_plan_data stores:
+Honest Ask_plan_data stores:
   - raw_json: Original AI response
   - parsed_data: Structured diet/workout data
   - metadata: { generatedAt, questionResponses }
@@ -178,7 +178,7 @@ gymna_plan_data stores:
 ### **Step 1: Run Database Migration**
 ```sql
 -- In Supabase SQL Editor, run:
--- database/migrations/009_gymna_plan_storage.sql
+-- database/migrations/009_Honest Ask_plan_storage.sql
 ```
 
 ### **Step 2: Test Diet Plan Generation**
@@ -204,10 +204,10 @@ gymna_plan_data stores:
 ### **Step 4: Verify Database Storage**
 ```sql
 -- Check saved plans
-SELECT * FROM gymna_plan_data WHERE user_id = '<your-user-id>';
+SELECT * FROM Honest Ask_plan_data WHERE user_id = '<your-user-id>';
 
 -- Check plan data structure
-SELECT plan_type, plan_title, parsed_data FROM gymna_plan_data;
+SELECT plan_type, plan_title, parsed_data FROM Honest Ask_plan_data;
 ```
 
 ---
@@ -312,7 +312,7 @@ SELECT plan_type, plan_title, parsed_data FROM gymna_plan_data;
 ## 🎓 Developer Notes
 
 ### **To Add New Question Types**
-Edit `types/gymna.types.ts`:
+Edit `types/Honest Ask.types.ts`:
 ```typescript
 export const CUSTOM_PLAN_QUESTIONS: DialogueQuestion[] = [
   {
@@ -326,15 +326,15 @@ export const CUSTOM_PLAN_QUESTIONS: DialogueQuestion[] = [
 ```
 
 ### **To Add New Plan Type**
-1. Add to `PlanType` in `types/gymna.types.ts`
+1. Add to `PlanType` in `types/Honest Ask.types.ts`
 2. Create new interface (e.g., `CustomPlanData`)
 3. Create display component (e.g., `CustomPlanTable.tsx`)
-4. Update `compilePromptFromDialogue()` in `app/actions/gymna.ts`
-5. Update `GymnaClient.tsx` to handle new type
+4. Update `compilePromptFromDialogue()` in `app/actions/Honest Ask.ts`
+5. Update `Honest AskClient.tsx` to handle new type
 
 ### **To Customize UI Colors**
 Edit gradient colors in:
-- `GymnaClient.tsx` - Welcome cards
+- `Honest AskClient.tsx` - Welcome cards
 - `DialogueFlow.tsx` - Modal header
 - `DietPlanTable.tsx` - Plan header
 - `WorkoutPlanTable.tsx` - Plan header
@@ -343,7 +343,7 @@ Edit gradient colors in:
 
 ## 📝 Summary
 
-The Gymna AI system now features:
+The Honest Ask AI system now features:
 - ✅ Beautiful, dialogue-based plan generation
 - ✅ Structured JSON storage and display
 - ✅ Complete UI/UX compliance

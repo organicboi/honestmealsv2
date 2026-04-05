@@ -125,8 +125,8 @@ export default function TopNav({ user, profile }: TopNavProps) {
                                         <Link href="/workout" className="hover:text-green-600 flex items-center gap-2">
                                             <span className="hidden md:inline">Workout</span>
                                         </Link>
-                                        <Link href="/askme" className="hover:text-green-600 flex items-center gap-2">
-                                            <span className="hidden md:inline">Gymna AI</span>
+                                        <Link href="/honestask" className="hover:text-green-600 flex items-center gap-2">
+                                            <span className="hidden md:inline">Honest Ask</span>
                                         </Link>
                                         <Link href="/offers" className="hover:text-green-600 flex items-center gap-2">
                                             <span className="hidden md:inline">Offers</span>

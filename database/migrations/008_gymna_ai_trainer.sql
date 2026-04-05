@@ -1,8 +1,8 @@
 -- Add credits to profiles
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS gymna_credits INTEGER DEFAULT 10;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS Honest Ask_credits INTEGER DEFAULT 10;
 
 -- Create chats table
-CREATE TABLE IF NOT EXISTS gymna_chats (
+CREATE TABLE IF NOT EXISTS Honest Ask_chats (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
     title TEXT NOT NULL,
@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS gymna_chats (
 );
 
 -- Create messages table
-CREATE TABLE IF NOT EXISTS gymna_messages (
+CREATE TABLE IF NOT EXISTS Honest Ask_messages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    chat_id UUID REFERENCES gymna_chats(id) ON DELETE CASCADE NOT NULL,
+    chat_id UUID REFERENCES Honest Ask_chats(id) ON DELETE CASCADE NOT NULL,
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
     content TEXT NOT NULL,
     type TEXT DEFAULT 'text', -- 'text', 'plan_table', etc.
@@ -21,32 +21,32 @@ CREATE TABLE IF NOT EXISTS gymna_messages (
 );
 
 -- RLS Policies
-ALTER TABLE gymna_chats ENABLE ROW LEVEL SECURITY;
-ALTER TABLE gymna_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE Honest Ask_chats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE Honest Ask_messages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own chats" ON gymna_chats
+CREATE POLICY "Users can view their own chats" ON Honest Ask_chats
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert their own chats" ON gymna_chats
+CREATE POLICY "Users can insert their own chats" ON Honest Ask_chats
     FOR INSERT WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own chats" ON gymna_chats
+CREATE POLICY "Users can delete their own chats" ON Honest Ask_chats
     FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can view messages in their chats" ON gymna_messages
+CREATE POLICY "Users can view messages in their chats" ON Honest Ask_messages
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM gymna_chats 
-            WHERE gymna_chats.id = gymna_messages.chat_id 
-            AND gymna_chats.user_id = auth.uid()
+            SELECT 1 FROM Honest Ask_chats 
+            WHERE Honest Ask_chats.id = Honest Ask_messages.chat_id 
+            AND Honest Ask_chats.user_id = auth.uid()
         )
     );
 
-CREATE POLICY "Users can insert messages in their chats" ON gymna_messages
+CREATE POLICY "Users can insert messages in their chats" ON Honest Ask_messages
     FOR INSERT WITH CHECK (
         EXISTS (
-            SELECT 1 FROM gymna_chats 
-            WHERE gymna_chats.id = gymna_messages.chat_id 
-            AND gymna_chats.user_id = auth.uid()
+            SELECT 1 FROM Honest Ask_chats 
+            WHERE Honest Ask_chats.id = Honest Ask_messages.chat_id 
+            AND Honest Ask_chats.user_id = auth.uid()
         )
     );

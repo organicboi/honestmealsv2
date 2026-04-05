@@ -1,4 +1,4 @@
-// Gymna AI Types for Dialogue-Based Plan Generation
+// Honest Ask AI Types for Dialogue-Based Plan Generation
 
 // ==================== Dialogue System Types ====================
 
@@ -174,6 +174,13 @@ export const DIET_PLAN_QUESTIONS: DialogueQuestion[] = [
         validation: { required: true, min: 100, max: 250 }
     },
     {
+        id: 'age',
+        question: 'How old are you?',
+        type: 'number',
+        placeholder: 'e.g., 25',
+        validation: { required: true, min: 10, max: 100 }
+    },
+    {
         id: 'activityLevel',
         question: 'What is your activity level?',
         type: 'select',
@@ -183,8 +190,8 @@ export const DIET_PLAN_QUESTIONS: DialogueQuestion[] = [
     {
         id: 'allergies',
         question: 'Do you have any food allergies or restrictions?',
-        type: 'text',
-        placeholder: 'e.g., Lactose intolerant, No nuts',
+        type: 'multiselect',
+        options: ['None', 'Lactose Intolerant', 'Gluten Free', 'Nut Allergy', 'Egg Allergy', 'Soy Allergy', 'Shellfish Allergy', 'Other'],
         validation: { required: false }
     },
     {

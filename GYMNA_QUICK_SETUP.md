@@ -1,10 +1,10 @@
-# 🚀 Gymna AI - Quick Setup Guide
+# 🚀 Honest Ask AI - Quick Setup Guide
 
 ## Prerequisites
-- ✅ Supabase project with existing Gymna tables (`gymna_chats`, `gymna_messages`)
+- ✅ Supabase project with existing Honest Ask tables (`Honest Ask_chats`, `Honest Ask_messages`)
 - ✅ Gemini API key configured (`GEMINI_API_KEY` in `.env.local`)
 - ✅ User authentication working
-- ✅ `gymna_credits` field in `profiles` table
+- ✅ `Honest Ask_credits` field in `profiles` table
 
 ---
 
@@ -15,11 +15,11 @@ Execute this SQL in your Supabase SQL Editor:
 
 ```sql
 -- Copy and paste the entire contents of:
--- database/migrations/009_gymna_plan_storage.sql
+-- database/migrations/009_Honest Ask_plan_storage.sql
 ```
 
 This creates:
-- `gymna_plan_data` table
+- `Honest Ask_plan_data` table
 - Indexes for performance
 - RLS policies for security
 
@@ -66,7 +66,7 @@ npm run dev
 Run in Supabase SQL Editor:
 ```sql
 -- Check if table exists
-SELECT * FROM gymna_plan_data LIMIT 5;
+SELECT * FROM Honest Ask_plan_data LIMIT 5;
 
 -- Check your plans
 SELECT 
@@ -74,7 +74,7 @@ SELECT
     plan_title, 
     created_at,
     parsed_data->>'title' as plan_name
-FROM gymna_plan_data
+FROM Honest Ask_plan_data
 WHERE user_id = auth.uid()
 ORDER BY created_at DESC;
 ```
@@ -88,11 +88,11 @@ ORDER BY created_at DESC;
 **Solution**: Add it to `.env.local` and restart server
 
 ### ❌ "Insufficient credits"
-**Problem**: User has 0 `gymna_credits`  
+**Problem**: User has 0 `Honest Ask_credits`  
 **Solution**: Update credits manually:
 ```sql
 UPDATE profiles 
-SET gymna_credits = 10 
+SET Honest Ask_credits = 10 
 WHERE id = '<user-id>';
 ```
 
@@ -100,16 +100,16 @@ WHERE id = '<user-id>';
 **Problem**: AI returned malformed JSON  
 **Solution**: The system handles this automatically - it stores the raw response but won't display a table. Credits are refunded.
 
-### ❌ Table "gymna_plan_data" does not exist
+### ❌ Table "Honest Ask_plan_data" does not exist
 **Problem**: Migration not run  
-**Solution**: Execute `009_gymna_plan_storage.sql` in Supabase
+**Solution**: Execute `009_Honest Ask_plan_storage.sql` in Supabase
 
 ### ❌ RLS policy error
 **Problem**: User can't access plan data  
 **Solution**: Verify RLS policies:
 ```sql
 SELECT * FROM pg_policies 
-WHERE tablename = 'gymna_plan_data';
+WHERE tablename = 'Honest Ask_plan_data';
 ```
 
 ---
@@ -138,7 +138,7 @@ WHERE tablename = 'gymna_plan_data';
 - [ ] Mobile responsive design
 
 ### ✅ Database Persistence
-- [ ] Plans saved to `gymna_plan_data`
+- [ ] Plans saved to `Honest Ask_plan_data`
 - [ ] Raw JSON and parsed data stored
 - [ ] Metadata includes responses
 - [ ] Can retrieve old plans
@@ -155,10 +155,10 @@ WHERE tablename = 'gymna_plan_data';
 - **Save plans**: Plans are automatically saved to your chat history
 
 ### For Developers
-- **Customize questions**: Edit `types/gymna.types.ts`
+- **Customize questions**: Edit `types/Honest Ask.types.ts`
 - **Change UI colors**: Modify gradient colors in components
-- **Add plan types**: Follow pattern in `types/gymna.types.ts`
-- **Adjust AI model**: Change model in `app/actions/gymna.ts`
+- **Add plan types**: Follow pattern in `types/Honest Ask.types.ts`
+- **Adjust AI model**: Change model in `app/actions/Honest Ask.ts`
 
 ---
 
@@ -168,12 +168,12 @@ WHERE tablename = 'gymna_plan_data';
 honestmealv2/
 ├── app/
 │   ├── actions/
-│   │   └── gymna.ts                    # ← Server actions (modified)
+│   │   └── Honest Ask.ts                    # ← Server actions (modified)
 │   └── askme/
-│       └── GymnaClient.tsx             # ← Main client (modified)
+│       └── Honest AskClient.tsx             # ← Main client (modified)
 │
 ├── components/
-│   └── gymna/
+│   └── Honest Ask/
 │       ├── DialogueFlow.tsx            # ← NEW: Step-by-step questions
 │       ├── DietPlanTable.tsx           # ← NEW: Diet plan display
 │       ├── WorkoutPlanTable.tsx        # ← NEW: Workout plan display
@@ -181,10 +181,10 @@ honestmealv2/
 │
 ├── database/
 │   └── migrations/
-│       └── 009_gymna_plan_storage.sql  # ← NEW: Database migration
+│       └── 009_Honest Ask_plan_storage.sql  # ← NEW: Database migration
 │
 └── types/
-    └── gymna.types.ts                  # ← NEW: TypeScript definitions
+    └── Honest Ask.types.ts                  # ← NEW: TypeScript definitions
 ```
 
 ---
@@ -230,4 +230,4 @@ Before considering setup complete:
 ---
 
 🎉 **Setup Complete!**  
-Your Gymna AI system is now fully operational with dialogue-based plan generation, beautiful table displays, and structured data storage.
+Your Honest Ask AI system is now fully operational with dialogue-based plan generation, beautiful table displays, and structured data storage.

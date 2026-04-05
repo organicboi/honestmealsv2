@@ -253,24 +253,24 @@ CREATE TABLE public.gym_partnerships (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT gym_partnerships_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.gymna_chats (
+CREATE TABLE public.Honest Ask_chats (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   title text NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT gymna_chats_pkey PRIMARY KEY (id),
-  CONSTRAINT gymna_chats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+  CONSTRAINT Honest Ask_chats_pkey PRIMARY KEY (id),
+  CONSTRAINT Honest Ask_chats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
-CREATE TABLE public.gymna_messages (
+CREATE TABLE public.Honest Ask_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   chat_id uuid NOT NULL,
   role text NOT NULL CHECK (role = ANY (ARRAY['user'::text, 'assistant'::text])),
   content text NOT NULL,
   type text DEFAULT 'text'::text,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT gymna_messages_pkey PRIMARY KEY (id),
-  CONSTRAINT gymna_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.gymna_chats(id)
+  CONSTRAINT Honest Ask_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT Honest Ask_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.Honest Ask_chats(id)
 );
 CREATE TABLE public.health_metrics (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -565,7 +565,7 @@ CREATE TABLE public.profiles (
   goal_weight double precision,
   pincode text CHECK (pincode IS NULL OR pincode ~ '^[1-9][0-9]{5}$'::text),
   delivery_address_verified boolean DEFAULT false,
-  gymna_credits integer DEFAULT 10,
+  Honest Ask_credits integer DEFAULT 10,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
   CONSTRAINT profiles_referred_by_fkey FOREIGN KEY (referred_by) REFERENCES auth.users(id)

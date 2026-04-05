@@ -37,12 +37,12 @@ CREATE INDEX IF NOT EXISTS idx_weight_logs_user_date
 CREATE INDEX IF NOT EXISTS idx_progress_photos_user_taken 
     ON public.progress_photos(user_id, taken_at DESC);
 
--- Gymna AI Queries
-CREATE INDEX IF NOT EXISTS idx_gymna_chats_user_updated 
-    ON public.gymna_chats(user_id, updated_at DESC);
+-- Honest Ask AI Queries
+CREATE INDEX IF NOT EXISTS idx_Honest Ask_chats_user_updated 
+    ON public.Honest Ask_chats(user_id, updated_at DESC);
 
-CREATE INDEX IF NOT EXISTS idx_gymna_messages_chat_created 
-    ON public.gymna_messages(chat_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_Honest Ask_messages_chat_created 
+    ON public.Honest Ask_messages(chat_id, created_at ASC);
 
 -- Food Search Optimization (requires pg_trgm extension)
 CREATE INDEX IF NOT EXISTS idx_meals_name_search 

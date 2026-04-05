@@ -1,11 +1,13 @@
 'use client';
 
-import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard } from 'lucide-react';
+import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { UserRole } from '@/types/database.types';
 import { motion } from 'framer-motion';
+import { useNavVisibility } from '@/context/NavVisibilityContext';
 
 interface NavItem {
     label: string;
@@ -18,6 +20,7 @@ const baseNavItems: NavItem[] = [
     { label: 'Meals', href: '/meals', icon: Utensils },
     { label: 'Health', href: '/health', icon: Activity },
     { label: 'Workout', href: '/workout', icon: Dumbbell },
+    { label: 'Ask', href: '/honestask', icon: MessageSquare },
 ];
 
 // Role-specific navigation items (shown in addition to base items)
@@ -53,10 +56,80 @@ interface BottomNavProps {
 
 export default function BottomNav({ userRole = 'standard_user' }: BottomNavProps) {
     const pathname = usePathname();
+    const { setNavVisible } = useNavVisibility();
+    const [visible, setVisibleLocal] = useState(true);
+    const lastScrollTop = useRef(0);
+    const scrollAccum = useRef(0);
+    const lastDir = useRef<'up' | 'down' | null>(null);
+    const isLocked = useRef(false);
+    const lockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isTyping = useRef(false);
 
-    // Hide on full-screen app routes — use CSS translate so the slide animation plays
-    // on route enter/exit rather than a hard unmount with no transition.
-    const hidden = pathname?.startsWith('/askme') ?? false;
+    const SCROLL_THRESHOLD = 30; // px of sustained scroll before toggling
+    const LOCK_MS = 350;         // ms to ignore scroll after a toggle
+
+    // Keep context in sync whenever local visible changes
+    const setVisible = (v: boolean) => {
+        setVisibleLocal(v);
+        setNavVisible(v);
+    };
+
+    useEffect(() => {
+        const handleScroll = (e: Event) => {
+            if (isTyping.current || isLocked.current) return;
+            const target = e.target as HTMLElement;
+            const scrollTop =
+                target === document.documentElement || target === document.body
+                    ? window.scrollY
+                    : target.scrollTop ?? 0;
+            const delta = scrollTop - lastScrollTop.current;
+            if (Math.abs(delta) < 1) return;
+            lastScrollTop.current = scrollTop;
+
+            const dir = delta > 0 ? 'down' : 'up';
+            if (dir !== lastDir.current) {
+                scrollAccum.current = 0;
+                lastDir.current = dir;
+            }
+            scrollAccum.current += Math.abs(delta);
+
+            if (scrollAccum.current >= SCROLL_THRESHOLD) {
+                scrollAccum.current = 0;
+                const next = dir === 'up';
+                setVisible(next);
+                // Lock briefly so layout-reflow scroll events don't flip us back
+                isLocked.current = true;
+                if (lockTimer.current) clearTimeout(lockTimer.current);
+                lockTimer.current = setTimeout(() => { isLocked.current = false; }, LOCK_MS);
+            }
+        };
+
+        const handleFocusIn = (e: FocusEvent) => {
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                isTyping.current = true;
+                setVisible(false);
+            }
+        };
+
+        const handleFocusOut = (e: FocusEvent) => {
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') {
+                isTyping.current = false;
+                setVisible(true);
+            }
+        };
+
+        document.addEventListener('scroll', handleScroll, { passive: true, capture: true });
+        document.addEventListener('focusin', handleFocusIn, true);
+        document.addEventListener('focusout', handleFocusOut, true);
+        return () => {
+            document.removeEventListener('scroll', handleScroll, { capture: true });
+            document.removeEventListener('focusin', handleFocusIn, true);
+            document.removeEventListener('focusout', handleFocusOut, true);
+            if (lockTimer.current) clearTimeout(lockTimer.current);
+        };
+    }, []);
 
     // Combine base items with role-specific items
     const roleItems = userRole !== 'standard_user' ? (roleSpecificNavItems[userRole] || []) : [];
@@ -65,7 +138,7 @@ export default function BottomNav({ userRole = 'standard_user' }: BottomNavProps
     return (
         <nav className={cn(
             "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden pb-safe transition-transform duration-300 ease-in-out",
-            hidden ? "translate-y-full" : "translate-y-0"
+            visible ? "translate-y-0" : "translate-y-full"
         )}>
             <div className="flex items-center justify-around h-16 px-2">
                 {navItems.map((item) => {

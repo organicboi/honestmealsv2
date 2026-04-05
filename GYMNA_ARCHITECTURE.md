@@ -1,10 +1,10 @@
-# Gymna AI System Architecture & Flow Diagram
+# Honest Ask AI System Architecture & Flow Diagram
 
 ## 📊 System Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        GYMNA AI SYSTEM                          │
+│                        Honest Ask AI SYSTEM                          │
 │                   Dialogue-Based Plan Generator                  │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -75,7 +75,7 @@ START: User visits /askme
 │   │                 - Activity: Moderately Active
 │   │                 ... return JSON only"
 │   │
-│   ├─ Deduct 1 Credit (profiles.gymna_credits - 1)
+│   ├─ Deduct 1 Credit (profiles.Honest Ask_credits - 1)
 │   │
 │   ├─ Call Gemini AI (gemini-2.0-flash-exp)
 │   │    │
@@ -97,10 +97,10 @@ START: User visits /askme
 │   │
 │   ├─ PHASE 4: Save to Database
 │   │    │
-│   │    ├─ Table: gymna_messages
+│   │    ├─ Table: Honest Ask_messages
 │   │    │    └─ { role: 'assistant', content: rawResponse, type: 'plan_json' }
 │   │    │
-│   │    └─ Table: gymna_plan_data
+│   │    └─ Table: Honest Ask_plan_data
 │   │         └─ { plan_type, plan_title, raw_json, parsed_data, metadata }
 │   │
 │   ├─ Close Generating Overlay
@@ -152,11 +152,11 @@ END: User sees beautiful plan table
          │                                  │
          ▼                                  ▼
 ┌────────────────────┐            ┌────────────────────┐
-│     profiles       │            │   gymna_chats      │
+│     profiles       │            │   Honest Ask_chats      │
 ├────────────────────┤            ├────────────────────┤
 │ id (FK)            │            │ id (PK)            │
 │ email              │            │ user_id (FK)       │
-│ gymna_credits      │◀───────────│ title              │
+│ Honest Ask_credits      │◀───────────│ title              │
 │ ...                │            │ created_at         │
 └────────────────────┘            │ updated_at         │
                                   └────────────────────┘
@@ -166,7 +166,7 @@ END: User sees beautiful plan table
                       │                    │                    │
                       ▼                    ▼                    ▼
             ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-            │ gymna_messages   │  │ gymna_plan_data  │  │  (Future Uses)   │
+            │ Honest Ask_messages   │  │ Honest Ask_plan_data  │  │  (Future Uses)   │
             ├──────────────────┤  ├──────────────────┤  └──────────────────┘
             │ id (PK)          │  │ id (PK)          │
             │ chat_id (FK)     │  │ chat_id (FK)     │
@@ -192,7 +192,7 @@ Storage Details:
 ## 🎨 Component Architecture
 
 ```
-GymnaClient.tsx (Main Container)
+Honest AskClient.tsx (Main Container)
 │
 ├─ Sidebar
 │   ├─ Chat List
@@ -253,9 +253,9 @@ GymnaClient.tsx (Main Container)
    └─ Server-side user verification
 
 2. Row Level Security (RLS)
-   ├─ gymna_chats: auth.uid() = user_id
-   ├─ gymna_messages: auth.uid() = chat_id.user_id
-   └─ gymna_plan_data: auth.uid() = user_id
+   ├─ Honest Ask_chats: auth.uid() = user_id
+   ├─ Honest Ask_messages: auth.uid() = chat_id.user_id
+   └─ Honest Ask_plan_data: auth.uid() = user_id
 
 3. Credit Management
    ├─ Check before dialogue starts
@@ -352,9 +352,9 @@ Parsed JSON
 ▼
 Database Storage
 │
-├─ gymna_messages.content = Raw AI Response (text)
+├─ Honest Ask_messages.content = Raw AI Response (text)
 │
-└─ gymna_plan_data
+└─ Honest Ask_plan_data
      ├─ raw_json = Raw AI Response (jsonb)
      ├─ parsed_data = Parsed JSON (jsonb)
      └─ metadata = { generatedAt, questionResponses }
@@ -376,7 +376,7 @@ UI Display
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│            GYMNA AI KEY FEATURES                       │
+│            Honest Ask AI KEY FEATURES                       │
 ├────────────────────────────────────────────────────────┤
 │                                                        │
 │  ✅ PHASE 1: UI/UX                                     │

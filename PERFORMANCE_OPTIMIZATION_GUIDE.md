@@ -63,9 +63,9 @@ idx_workout_logs_user_date       -- Calendar view
 idx_workout_exercises_log_id     -- Exercise JOIN
 idx_workout_sets_exercise_id     -- Sets JOIN
 
--- Gymna AI
-idx_gymna_chats_user_updated     -- Chat list
-idx_gymna_messages_chat_created  -- Message history
+-- Honest Ask AI
+idx_Honest Ask_chats_user_updated     -- Chat list
+idx_Honest Ask_messages_chat_created  -- Message history
 ```
 
 **Impact:** 
