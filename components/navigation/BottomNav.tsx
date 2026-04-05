@@ -1,6 +1,6 @@
 'use client';
 
-import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard, Zap } from 'lucide-react';
+import { Utensils, Activity, Dumbbell, TrendingUp, Users, Settings, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,6 @@ const baseNavItems: NavItem[] = [
     { label: 'Meals', href: '/meals', icon: Utensils },
     { label: 'Health', href: '/health', icon: Activity },
     { label: 'Workout', href: '/workout', icon: Dumbbell },
-    { label: 'Strava', href: '/strava', icon: Zap },
 ];
 
 // Role-specific navigation items (shown in addition to base items)
@@ -54,13 +53,20 @@ interface BottomNavProps {
 
 export default function BottomNav({ userRole = 'standard_user' }: BottomNavProps) {
     const pathname = usePathname();
-    
+
+    // Hide on full-screen app routes — use CSS translate so the slide animation plays
+    // on route enter/exit rather than a hard unmount with no transition.
+    const hidden = pathname?.startsWith('/askme') ?? false;
+
     // Combine base items with role-specific items
     const roleItems = userRole !== 'standard_user' ? (roleSpecificNavItems[userRole] || []) : [];
     const navItems = [...baseNavItems, ...roleItems];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden pb-safe">
+        <nav className={cn(
+            "fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-50 md:hidden pb-safe transition-transform duration-300 ease-in-out",
+            hidden ? "translate-y-full" : "translate-y-0"
+        )}>
             <div className="flex items-center justify-around h-16 px-2">
                 {navItems.map((item) => {
                     const Icon = item.icon;

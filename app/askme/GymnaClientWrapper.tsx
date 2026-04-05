@@ -47,10 +47,18 @@ const GymnaClient = dynamic(() => import('./GymnaClient'), {
     ),
 });
 
-interface GymnaClientWrapperProps {
-    user: User;
+interface Chat {
+    id: string;
+    title: string;
+    updated_at: string;
 }
 
-export default function GymnaClientWrapper({ user }: GymnaClientWrapperProps) {
-    return <GymnaClient user={user} />;
+interface GymnaClientWrapperProps {
+    user: User;
+    initialChats: Chat[];
+    initialCredits: number;
+}
+
+export default function GymnaClientWrapper({ user, initialChats, initialCredits }: GymnaClientWrapperProps) {
+    return <GymnaClient user={user} initialChats={initialChats} initialCredits={initialCredits} />;
 }

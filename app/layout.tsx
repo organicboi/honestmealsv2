@@ -3,7 +3,9 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import BottomNav from "@/components/navigation/BottomNav";
 import TopNavClient from "@/components/navigation/TopNavClient";
+import LayoutBody from "@/components/navigation/LayoutBody";
 import { CartProvider } from "@/context/CartContext";
+import { NavVisibilityProvider } from "@/context/NavVisibilityContext";
 import { Toaster } from "sonner";
 import AddToHomeScreen from "@/components/pwa/AddToHomeScreen";
 import { createClient } from "@/utils/supabase/server";
@@ -52,9 +54,11 @@ export default async function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} antialiased`}>
         <CartProvider>
-          <TopNavClient user={user} profile={profile} />
-          <div className="pb-16 md:pb-0">{children}</div>
-          {user && <BottomNav userRole={userRole ?? undefined} />}
+          <NavVisibilityProvider>
+            <TopNavClient user={user} profile={profile} />
+            <LayoutBody>{children}</LayoutBody>
+            {user && <BottomNav userRole={userRole ?? undefined} />}
+          </NavVisibilityProvider>
           <AddToHomeScreen />
           <Toaster />
         </CartProvider>

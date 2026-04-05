@@ -59,6 +59,24 @@ export default function DialogueFlow({ planType, onComplete, onCancel }: Dialogu
         return true;
     };
 
+    const loadStepState = (stepIndex: number, currentResponses: DialogueResponse[]) => {
+        const question = questions[stepIndex];
+        const existing = currentResponses.find(r => r.questionId === question.id);
+        if (existing) {
+            if (question.type === 'multiselect') {
+                setSelectedOptions(existing.answer as string[]);
+                setCurrentAnswer('');
+            } else {
+                setCurrentAnswer(existing.answer as string);
+                setSelectedOptions([]);
+            }
+        } else {
+            setCurrentAnswer('');
+            setSelectedOptions([]);
+        }
+        setError('');
+    };
+
     const handleNext = () => {
         if (!validateAnswer()) return;
 
@@ -70,53 +88,27 @@ export default function DialogueFlow({ planType, onComplete, onCancel }: Dialogu
 
         const updatedResponses = [...responses];
         const existingIndex = updatedResponses.findIndex(r => r.questionId === currentQuestion.id);
-        
         if (existingIndex !== -1) {
             updatedResponses[existingIndex] = newResponse;
         } else {
             updatedResponses.push(newResponse);
         }
-        
         setResponses(updatedResponses);
 
         if (currentStep < questions.length - 1) {
-            setCurrentStep(currentStep + 1);
-            // Load existing answer if going back
-            const nextQuestion = questions[currentStep + 1];
-            const existingResponse = updatedResponses.find(r => r.questionId === nextQuestion.id);
-            if (existingResponse) {
-                if (nextQuestion.type === 'multiselect') {
-                    setSelectedOptions(existingResponse.answer as string[]);
-                } else {
-                    setCurrentAnswer(existingResponse.answer as string);
-                }
-            } else {
-                setCurrentAnswer('');
-                setSelectedOptions([]);
-            }
-            setError('');
+            const nextStep = currentStep + 1;
+            setCurrentStep(nextStep);
+            loadStepState(nextStep, updatedResponses);
         } else {
-            // All questions answered - submit
             onComplete(updatedResponses);
         }
     };
 
     const handleBack = () => {
         if (currentStep > 0) {
-            setCurrentStep(currentStep - 1);
-            const prevQuestion = questions[currentStep - 1];
-            const existingResponse = responses.find(r => r.questionId === prevQuestion.id);
-            if (existingResponse) {
-                if (prevQuestion.type === 'multiselect') {
-                    setSelectedOptions(existingResponse.answer as string[]);
-                } else {
-                    setCurrentAnswer(existingResponse.answer as string);
-                }
-            } else {
-                setCurrentAnswer('');
-                setSelectedOptions([]);
-            }
-            setError('');
+            const prevStep = currentStep - 1;
+            setCurrentStep(prevStep);
+            loadStepState(prevStep, responses);
         }
     };
 
