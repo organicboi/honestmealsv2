@@ -19,5 +19,12 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://fbexmkwfidhfntfmqaaw.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiZXhta3dmaWRoZm50Zm1xYWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ2NjE3MzUsImV4cCI6MjA4MDIzNzczNX0.R4jou7TLssAffOy2GajC7ffpjbuOuqV1CD-8_fjulhc",
+    "NEXT_PUBLIC_SITE_URL": "https://honestmealsv2.workers.dev",
+    "NEXT_PUBLIC_STRAVA_CLIENT_ID": "220688",
+    "STRAVA_CLIENT_ID": "220688"
   }
 }
