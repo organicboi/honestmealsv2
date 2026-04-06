@@ -76,9 +76,19 @@ export async function getTrainerDashboard() {
         .order('created_at', { ascending: false })
         .limit(5);
 
+    const normalizeRow = (row: Record<string, unknown>) => ({
+        ...row,
+        orders:   Array.isArray(row.orders)   ? (row.orders[0]   ?? null) : (row.orders   ?? null),
+        profiles: Array.isArray(row.profiles) ? (row.profiles[0] ?? null) : (row.profiles ?? null),
+    });
+
     return {
         stats: { totalClients, pendingInvites, mtdEarned, pendingPayout, totalEarned },
-        recentCommissions: recentCommissions.data ?? [],
+        recentCommissions: ((recentCommissions.data ?? []) as Record<string, unknown>[]).map(normalizeRow) as unknown as Array<{
+            id: string; commission_amount: number; commission_rate: number;
+            order_amount: number; status: string; created_at: string;
+            profiles?: { name: string } | null;
+        }>,
         activeClientsFeedToday: activityRes.data ?? [],
     };
 }
@@ -102,7 +112,11 @@ export async function getTrainerClients() {
         .order('created_at', { ascending: false });
 
     if (dbErr) return { error: dbErr.message, clients: [] };
-    return { clients: data ?? [] };
+    const clients = (data ?? []).map(row => ({
+        ...row,
+        profiles: Array.isArray(row.profiles) ? (row.profiles[0] ?? null) : (row.profiles ?? null),
+    }));
+    return { clients };
 }
 
 // ─── Full client profile (trainer view) ───────────────────────────────────────
@@ -259,7 +273,12 @@ export async function getTrainerCommissions(filters?: { status?: string; clientI
 
     const { data, error: dbErr } = await query;
     if (dbErr) return { error: dbErr.message, commissions: [] };
-    return { commissions: data ?? [] };
+    const commissions = (data ?? []).map(row => ({
+        ...row,
+        orders:   Array.isArray(row.orders)   ? (row.orders[0]   ?? null) : (row.orders   ?? null),
+        profiles: Array.isArray(row.profiles) ? (row.profiles[0] ?? null) : (row.profiles ?? null),
+    }));
+    return { commissions };
 }
 
 export async function updateCommissionStatus(commissionId: string, status: 'pending' | 'processing' | 'paid' | 'cancelled') {
