@@ -135,7 +135,31 @@ export async function sendMessage(chatId: string, content: string) {
             content
         });
 
-        // 4. Call AI with gemini-2.5-flash (as confirmed working in curl test)
+        // 4. Fetch user health profile for AI context
+        const { data: userProfile } = await supabase
+            .from('profiles')
+            .select('name, gender, age, weight, height, goal_type, goal_weight, food_type, activity_level, workout_experience, bmr, tdee, daily_calorie_goal, daily_protein_goal, dietary_restrictions, preferred_cuisine, injuries_limitations')
+            .eq('id', user.id)
+            .single();
+
+        // Build personalised user context block
+        const userContext = userProfile ? `
+USER PROFILE (use this to personalise every response — DO NOT ask for data already provided here):
+- Name: ${userProfile.name ?? 'Not set'}
+- Age: ${userProfile.age ?? 'Unknown'} | Gender: ${userProfile.gender ?? 'Unknown'}
+- Weight: ${userProfile.weight ?? 'Unknown'} kg | Height: ${userProfile.height ?? 'Unknown'} cm
+- Goal: ${userProfile.goal_type?.replace(/_/g, ' ') ?? 'General health'}${userProfile.goal_weight ? ` (target: ${userProfile.goal_weight} kg)` : ''}
+- Diet preference: ${userProfile.food_type?.replace(/_/g, ' ') ?? 'No preference'}
+- Activity level: ${userProfile.activity_level?.replace(/_/g, ' ') ?? 'Moderate'}
+- Workout experience: ${userProfile.workout_experience ?? 'Beginner'}
+- Food restrictions: ${Array.isArray(userProfile.dietary_restrictions) && userProfile.dietary_restrictions.length ? userProfile.dietary_restrictions.join(', ') : 'None'}
+- Preferred cuisine: ${userProfile.preferred_cuisine ?? 'Mixed'}
+- Injuries/limitations: ${userProfile.injuries_limitations ?? 'None'}
+- BMR: ${userProfile.bmr ? Math.round(userProfile.bmr) + ' kcal' : 'Unknown'} | TDEE: ${userProfile.tdee ? Math.round(userProfile.tdee) + ' kcal' : 'Unknown'}
+- Daily calorie goal: ${userProfile.daily_calorie_goal ?? 'Not set'} kcal | Daily protein goal: ${userProfile.daily_protein_goal ?? 'Not set'} g
+` : '';
+
+        // 5. Call AI with gemini-2.5-flash
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
@@ -143,7 +167,7 @@ export async function sendMessage(chatId: string, content: string) {
         
         // Build the full prompt with system instruction
         const systemPrompt = `You are Honest Ask, the AI health coach built into the Honest Meals platform — a Pune-based food and fitness app.
-
+${userContext}
 IMPORTANT — Honest Meals Platform Features (ALWAYS suggest these instead of any third-party app):
 1. **Meal Ordering** (/order) — Users can order high-protein, macro-labelled meals (calories, protein, carbs, fat shown for every item). Veg, non-veg, elixirs, custom meals. Available in Pune.
 2. **Health Dashboard** (/health) — Tracks daily calories, protein, carbs, fat, water intake, body weight, BMI, streaks, and food logs. Users set their own daily goals. Food from Honest Meals is auto-logged.
@@ -153,13 +177,15 @@ IMPORTANT — Honest Meals Platform Features (ALWAYS suggest these instead of an
 
 RULES:
 - NEVER suggest MyFitnessPal, Cronometer, Fitbit, or any external app. Honest Meals has everything built in.
+- Address the user by name if known. Reference their specific stats (weight, goal, TDEE) in answers where relevant.
 - When your response explains or recommends one of the above features, append this EXACT token inline at the end of that sentence (before the period or on the next line): [ACTION:/route|Button Label]
   Examples:
   - "You can log your meals on the Health Dashboard. [ACTION:/health|Open Health Dashboard]"
   - "Try logging today's workout. [ACTION:/workout|Log a Workout]"
   - "Order a high-protein meal to hit your targets. [ACTION:/order|Browse Meals]"
   - "Check your weight trend in Progress Tracking. [ACTION:/progress|View Progress]"
-  - "Generate a personalised diet plan here in Honest Ask. [ACTION:/honestask|Generate Diet Plan]"
+  - "Generate a personalised diet plan here in Honest Ask. [ACTION:plan:diet|Generate Diet Plan]"
+  - "Generate a personalised workout plan here in Honest Ask. [ACTION:plan:workout|Generate Workout Plan]"
 - Only emit [ACTION:...] tokens for features the user is likely to use next. Do not spam every sentence.
 - Keep responses concise, direct, and professional. Use markdown (bold, bullets, tables) where helpful.
 

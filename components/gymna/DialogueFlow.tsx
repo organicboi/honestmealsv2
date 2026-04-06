@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,14 +14,21 @@ import { DIET_PLAN_QUESTIONS, WORKOUT_PLAN_QUESTIONS } from '@/types/gymna.types
 
 interface DialogueFlowProps {
     planType: PlanType;
+    prefillData?: Record<string, string | string[]>;
     onComplete: (responses: DialogueResponse[]) => void;
     onCancel: () => void;
 }
 
-export default function DialogueFlow({ planType, onComplete, onCancel }: DialogueFlowProps) {
+export default function DialogueFlow({ planType, prefillData, onComplete, onCancel }: DialogueFlowProps) {
     const questions = planType === 'diet' ? DIET_PLAN_QUESTIONS : WORKOUT_PLAN_QUESTIONS;
     const [currentStep, setCurrentStep] = useState(0);
-    const [responses, setResponses] = useState<DialogueResponse[]>([]);
+    const [responses, setResponses] = useState<DialogueResponse[]>(() => {
+        // Pre-populate responses from profile prefill data
+        if (!prefillData) return [];
+        return Object.entries(prefillData)
+            .filter(([, v]) => v !== '' && !(Array.isArray(v) && v.length === 0))
+            .map(([questionId, answer]) => ({ questionId, answer }));
+    });
     const [currentAnswer, setCurrentAnswer] = useState<string | string[]>('');
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
     const [error, setError] = useState<string>('');
@@ -76,6 +83,10 @@ export default function DialogueFlow({ planType, onComplete, onCancel }: Dialogu
         }
         setError('');
     };
+
+    // Load step 0 initial state on mount (respects prefill)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => { loadStepState(0, responses); }, []);
 
     const handleNext = () => {
         if (!validateAnswer()) return;
@@ -157,6 +168,14 @@ export default function DialogueFlow({ planType, onComplete, onCancel }: Dialogu
                             />
                         </div>
                     </div>
+
+                    {/* Prefill indicator */}
+                    {prefillData && Object.keys(prefillData).length > 0 && (
+                        <div className="mt-3 flex items-center gap-1.5 bg-white/15 rounded-xl px-3 py-1.5 text-xs font-semibold text-white/90 w-fit">
+                            <Check className="h-3.5 w-3.5" />
+                            Pre-filled from your profile — edit anything below
+                        </div>
+                    )}
                 </div>
 
                 {/* Question Content */}

@@ -87,6 +87,18 @@ export interface Profile {
   delivery_time: 'morning' | 'afternoon' | 'evening';
   onboarding_completed_at: string | null;
   onboarding_step: number;
+  // Health & fitness onboarding fields (migration 012)
+  gender: 'male' | 'female' | 'other' | null;
+  preferred_cuisine: string | null;
+  workout_experience: 'beginner' | 'intermediate' | 'advanced' | null;
+  workout_equipment: string | null;
+  workout_days_per_week: number | null;
+  workout_session_duration: string | null;
+  workout_focus_areas: string[] | null;
+  injuries_limitations: string | null;
+  daily_water_goal_ml: number | null;
+  bmr: number | null;
+  tdee: number | null;
 }
 
 export interface Meal {

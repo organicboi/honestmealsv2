@@ -57,8 +57,9 @@ interface GymnaClientWrapperProps {
     user: User;
     initialChats: Chat[];
     initialCredits: number;
+    healthProfile?: any;
 }
 
-export default function GymnaClientWrapper({ user, initialChats, initialCredits }: GymnaClientWrapperProps) {
-    return <GymnaClient user={user} initialChats={initialChats} initialCredits={initialCredits} />;
+export default function GymnaClientWrapper({ user, initialChats, initialCredits, healthProfile }: GymnaClientWrapperProps) {
+    return <GymnaClient user={user} initialChats={initialChats} initialCredits={initialCredits} healthProfile={healthProfile} />;
 }

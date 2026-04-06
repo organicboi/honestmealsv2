@@ -1,5 +1,6 @@
 import { getUser } from '@/utils/supabase/server';
 import { getChats, getUserCredits } from '@/app/actions/gymna';
+import { getUserHealthProfile } from '@/app/actions/onboarding';
 import { redirect } from 'next/navigation';
 import GymnaClientWrapper from './GymnaClientWrapper';
 
@@ -10,15 +11,14 @@ export default async function AskMePage() {
         redirect('/sign-in');
     }
 
-    // Fetch initial data server-side to avoid client-side waterfalls.
-    // Wrapped in try/catch: if these fail during the RSC re-render triggered
-    // by a Server Action POST, the page must not crash with a 500.
     let initialChats: any[] = [];
     let initialCredits = 0;
+    let healthProfile: any = null;
     try {
-        [initialChats, initialCredits] = await Promise.all([
+        [initialChats, initialCredits, healthProfile] = await Promise.all([
             getChats(),
             getUserCredits(),
+            getUserHealthProfile(),
         ]);
     } catch {
         // Non-fatal — client will see empty state and can still chat
@@ -29,6 +29,7 @@ export default async function AskMePage() {
             user={user}
             initialChats={initialChats}
             initialCredits={initialCredits}
+            healthProfile={healthProfile}
         />
     );
 }

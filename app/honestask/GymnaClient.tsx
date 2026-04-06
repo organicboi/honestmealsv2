@@ -138,9 +138,23 @@ function MarkdownText({ content }: { content: string }) {
 }
 
 // ─── Full assistant message: markdown + action buttons ──────────
-function AssistantMessage({ content }: { content: string }) {
+function AssistantMessage({ content, onPlanAction }: { content: string; onPlanAction?: (type: PlanType) => void }) {
     const router = useRouter();
     const { cleanContent, actions } = parseActions(content);
+
+    const handleAction = (action: ActionToken) => {
+        if (action.route === 'plan:diet') {
+            onPlanAction?.('diet');
+        } else if (action.route === 'plan:workout') {
+            onPlanAction?.('workout');
+        } else if (action.route === '/honestask' && /diet/i.test(action.label)) {
+            onPlanAction?.('diet');
+        } else if (action.route === '/honestask' && /workout/i.test(action.label)) {
+            onPlanAction?.('workout');
+        } else {
+            router.push(action.route);
+        }
+    };
 
     return (
         <div>
@@ -153,7 +167,7 @@ function AssistantMessage({ content }: { content: string }) {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.08 }}
-                            onClick={() => router.push(action.route)}
+                            onClick={() => handleAction(action)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-semibold shadow-md shadow-orange-200 hover:shadow-lg hover:shadow-orange-200 hover:scale-105 active:scale-95 transition-all"
                         >
                             {ROUTE_ICON[action.route] ?? <ArrowRight className="h-3.5 w-3.5" />}
@@ -222,9 +236,130 @@ interface GymnaClientProps {
     user: any;
     initialChats: Chat[];
     initialCredits: number;
+    healthProfile?: any;
 }
 
-export default function GymnaClient({ user, initialChats, initialCredits }: GymnaClientProps) {
+// ─── Profile → curated prompts ──────────────────────────────────────────────
+function buildCuratedPrompts(profile: any): string[] {
+    if (!profile?.goal_type) return [
+        'How much protein do I need daily?',
+        'Best exercises for fat loss',
+        'Generate a diet plan for me',
+        'Create a beginner workout plan',
+        'Meal timing tips',
+    ];
+
+    const name   = profile.name   ? `for ${profile.name}` : '';
+    const weight = profile.weight ? `(${profile.weight} kg)` : '';
+
+    const goalMap: Record<string, string[]> = {
+        lose_weight: [
+            `How many calories should I eat to lose 0.5 kg/week? ${weight}`,
+            `Generate a fat-loss diet plan ${name}`,
+            `Create a fat-burning workout plan ${name}`,
+            `What's the best cardio for fat loss at my activity level?`,
+            `Intermittent fasting — is it right for my goal?`,
+        ],
+        build_muscle: [
+            `How much protein do I need to build muscle? ${weight}`,
+            `Generate a muscle-building diet plan ${name}`,
+            `Create a hypertrophy workout plan ${name}`,
+            `What's my optimal calorie surplus for lean gains?`,
+            `Progressive overload tips for ${profile.workout_experience ?? 'beginner'}s`,
+        ],
+        gain_weight: [
+            `How many calories do I need to gain weight? ${weight}`,
+            `Generate a bulking diet plan ${name}`,
+            `Create a strength & mass workout plan ${name}`,
+            `Best high-calorie Indian foods for weight gain`,
+            `How fast should I gain weight to minimise fat gain?`,
+        ],
+        maintain_weight: [
+            `What are my exact maintenance calories? ${weight}`,
+            `Generate a balanced maintenance diet plan ${name}`,
+            `Create a fitness maintenance workout plan ${name}`,
+            `How do I track progress without losing or gaining weight?`,
+        ],
+        manage_health: [
+            `What's a healthy balanced diet for my age and weight? ${weight}`,
+            `Generate a health-focused diet plan ${name}`,
+            `Create a beginner-friendly workout routine ${name}`,
+            `How do I improve energy levels through nutrition?`,
+            `Best anti-inflammatory foods to include daily`,
+        ],
+    };
+
+    return (goalMap[profile.goal_type] ?? goalMap.manage_health).slice(0, 5);
+}
+
+// ─── Profile → DialogueFlow prefill map ─────────────────────────────────────
+const FOOD_TYPE_MAP: Record<string, string> = {
+    veg:           'Vegetarian',
+    non_veg:       'Non-Vegetarian',
+    vegan:         'Vegan',
+    no_preference: 'Non-Vegetarian', // neutral default
+};
+
+const GOAL_DIET_MAP: Record<string, string> = {
+    lose_weight:    'Lose Weight',
+    build_muscle:   'Gain Muscle',
+    gain_weight:    'Gain Muscle',
+    maintain_weight:'Maintain Weight',
+    manage_health:  'General Health',
+};
+
+const GOAL_WORKOUT_MAP: Record<string, string> = {
+    lose_weight:    'Weight Loss',
+    build_muscle:   'Gain Muscle (Hypertrophy)',
+    gain_weight:    'Build Strength',
+    maintain_weight:'General Fitness',
+    manage_health:  'General Fitness',
+};
+
+const ACTIVITY_MAP: Record<string, string> = {
+    sedentary:          'Sedentary',
+    lightly_active:     'Lightly Active',
+    moderately_active:  'Moderately Active',
+    very_active:        'Very Active',
+};
+
+const EXP_MAP: Record<string, string> = {
+    beginner:     'Beginner (0-6 months)',
+    intermediate: 'Intermediate (6 months - 2 years)',
+    advanced:     'Advanced (2+ years)',
+};
+
+function buildPrefillFromProfile(planType: PlanType, profile: any): Record<string, string | string[]> {
+    if (!profile) return {};
+    if (planType === 'diet') {
+        return {
+            preference:   FOOD_TYPE_MAP[profile.food_type]   ?? '',
+            goal:         GOAL_DIET_MAP[profile.goal_type]   ?? '',
+            weight:       profile.weight  ? String(profile.weight)  : '',
+            height:       profile.height  ? String(profile.height)  : '',
+            age:          profile.age     ? String(profile.age)     : '',
+            activityLevel:ACTIVITY_MAP[profile.activity_level] ?? '',
+            allergies:    Array.isArray(profile.dietary_restrictions) && profile.dietary_restrictions.length
+                            ? profile.dietary_restrictions
+                            : ['None'],
+            cuisine:      profile.preferred_cuisine ?? 'Mixed',
+            mealsPerDay:  profile.meals_per_day ? `${profile.meals_per_day} Meals` : '3 Meals',
+        };
+    } else {
+        return {
+            goal:            GOAL_WORKOUT_MAP[profile.goal_type] ?? 'General Fitness',
+            experience:      EXP_MAP[profile.workout_experience]  ?? 'Beginner (0-6 months)',
+            equipment:       profile.workout_equipment            ?? 'Full Gym',
+            daysPerWeek:     profile.workout_days_per_week ? `${profile.workout_days_per_week} Days` : '3 Days',
+            sessionDuration: profile.workout_session_duration     ?? '60 minutes',
+            injuries:        profile.injuries_limitations         ?? '',
+            focusAreas:      Array.isArray(profile.workout_focus_areas) ? profile.workout_focus_areas : [],
+        };
+    }
+}
+
+
+export default function GymnaClient({ user, initialChats, initialCredits, healthProfile }: GymnaClientProps) {
     const [chats, setChats] = useState<Chat[]>(initialChats);
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -238,6 +373,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showDialogue, setShowDialogue] = useState(false);
     const [selectedPlanType, setSelectedPlanType] = useState<PlanType | null>(null);
+    const [showProfileConfirm, setShowProfileConfirm] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     // Prevents the currentChatId useEffect from re-fetching when we've already
@@ -406,8 +542,27 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
             return;
         }
         setSelectedPlanType(planType);
-        setShowDialogue(true);
+        // If profile has enough data, offer quick-generate via saved profile
+        const hasProfileData = healthProfile?.weight && healthProfile?.height && healthProfile?.age && healthProfile?.goal_type;
+        if (hasProfileData) {
+            setShowProfileConfirm(true);
+        } else {
+            setShowDialogue(true);
+        }
         setSidebarOpen(false);
+    };
+
+    // Quick-generate using saved profile data (bypass dialogue)
+    const handleQuickGenerate = () => {
+        setShowProfileConfirm(false);
+        if (!selectedPlanType) return;
+        const prefill = buildPrefillFromProfile(selectedPlanType, healthProfile);
+        // Convert prefill into DialogueResponse array
+        const responses: DialogueResponse[] = Object.entries(prefill).map(([questionId, answer]) => ({
+            questionId,
+            answer: answer as string | string[],
+        }));
+        handleDialogueComplete(responses);
     };
 
     const handleDialogueComplete = async (responses: DialogueResponse[]) => {
@@ -476,11 +631,88 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
             navVisible ? 'h-[calc(100dvh-4rem)]' : 'h-dvh' // mobile: dynamic
         )}>
 
+            {/* --- Profile Quick-Generate Confirm --- */}
+            <AnimatePresence>
+                {showProfileConfirm && selectedPlanType && (
+                    <motion.div
+                        key="profile-confirm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-70 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 40, scale: 0.97 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 40 }}
+                            transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                            className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center mx-auto mb-4">
+                                {selectedPlanType === 'diet'
+                                    ? <Utensils className="h-6 w-6 text-white" />
+                                    : <Dumbbell className="h-6 w-6 text-white" />}
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900 text-center mb-1">
+                                We found your profile!
+                            </h3>
+                            <p className="text-sm text-gray-500 text-center mb-5">
+                                Generate your {selectedPlanType === 'diet' ? 'diet' : 'workout'} plan instantly using your saved data, or customise your answers first.
+                            </p>
+
+                            {/* Profile summary chips */}
+                            {healthProfile && (
+                                <div className="flex flex-wrap gap-1.5 justify-center mb-5">
+                                    {healthProfile.weight && (
+                                        <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold">{healthProfile.weight} kg</span>
+                                    )}
+                                    {healthProfile.height && (
+                                        <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold">{healthProfile.height} cm</span>
+                                    )}
+                                    {healthProfile.goal_type && (
+                                        <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold capitalize">{healthProfile.goal_type.replace(/_/g, ' ')}</span>
+                                    )}
+                                    {healthProfile.activity_level && (
+                                        <span className="px-2.5 py-1 rounded-full bg-orange-50 text-orange-700 text-xs font-semibold capitalize">{healthProfile.activity_level.replace(/_/g, ' ')}</span>
+                                    )}
+                                    {healthProfile.tdee && (
+                                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">{healthProfile.tdee} kcal TDEE</span>
+                                    )}
+                                </div>
+                            )}
+
+                            <div className="space-y-2">
+                                <button
+                                    onClick={handleQuickGenerate}
+                                    className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold text-sm shadow-md shadow-orange-200 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                                >
+                                    <Sparkles className="h-4 w-4" />
+                                    Use my profile — generate now
+                                </button>
+                                <button
+                                    onClick={() => { setShowProfileConfirm(false); setShowDialogue(true); }}
+                                    className="w-full py-3 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:bg-gray-50 transition-colors"
+                                >
+                                    Customise my answers
+                                </button>
+                                <button
+                                    onClick={() => { setShowProfileConfirm(false); setSelectedPlanType(null); }}
+                                    className="w-full py-2 text-xs text-gray-400 hover:text-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* --- Dialogue & Generating Overlays --- */}
             <AnimatePresence>
                 {showDialogue && selectedPlanType && (
                     <DialogueFlow
                         planType={selectedPlanType}
+                        prefillData={buildPrefillFromProfile(selectedPlanType, healthProfile)}
                         onComplete={handleDialogueComplete}
                         onCancel={() => { setShowDialogue(false); setSelectedPlanType(null); }}
                     />
@@ -832,16 +1064,54 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                             transition={{ duration: 0.4 }}
                             className="flex flex-col items-center justify-center h-full px-4 pb-4 text-center"
                         >
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-200 mb-5">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center shadow-lg shadow-orange-200 mb-4">
                                 <Sparkles className="h-8 w-8 text-white" />
                             </div>
-                            <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Welcome to Honest Ask</h1>
-                            <p className="text-sm text-gray-500 mb-8 max-w-xs">
-                                Your personal AI fitness & nutrition coach. Ask anything or generate a customized plan.
-                            </p>
+
+                            {healthProfile?.name ? (
+                                <>
+                                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                                        Hey {healthProfile.name.split(' ')[0]}! 👋
+                                    </h1>
+                                    <p className="text-sm text-gray-500 mb-3 max-w-xs">
+                                        Ready to work on your <span className="font-semibold text-orange-600 capitalize">{healthProfile.goal_type?.replace(/_/g, ' ')}</span> goal?
+                                    </p>
+
+                                    {/* Stats strip */}
+                                    {(healthProfile.tdee || healthProfile.daily_calorie_goal || healthProfile.daily_water_goal_ml) && (
+                                        <div className="flex items-center gap-2 mb-5 flex-wrap justify-center">
+                                            {healthProfile.tdee && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 border border-orange-100">
+                                                    <Zap className="h-3.5 w-3.5 text-orange-500" />
+                                                    <span className="text-xs font-bold text-orange-700">{Math.round(healthProfile.tdee)} kcal TDEE</span>
+                                                </div>
+                                            )}
+                                            {healthProfile.daily_calorie_goal && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-50 border border-green-100">
+                                                    <Utensils className="h-3.5 w-3.5 text-green-600" />
+                                                    <span className="text-xs font-bold text-green-700">{healthProfile.daily_calorie_goal} kcal goal</span>
+                                                </div>
+                                            )}
+                                            {healthProfile.daily_water_goal_ml && (
+                                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100">
+                                                    <Activity className="h-3.5 w-3.5 text-blue-500" />
+                                                    <span className="text-xs font-bold text-blue-700">{(healthProfile.daily_water_goal_ml / 1000).toFixed(1)} L water</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <h1 className="text-2xl font-bold text-gray-900 mb-1.5">Welcome to Honest Ask</h1>
+                                    <p className="text-sm text-gray-500 mb-5 max-w-xs">
+                                        Your personal AI fitness & nutrition coach. Ask anything or generate a customized plan.
+                                    </p>
+                                </>
+                            )}
 
                             {/* Generator cards */}
-                            <div className="grid grid-cols-2 gap-3 w-full max-w-sm mb-6">
+                            <div className="grid grid-cols-2 gap-3 w-full max-w-sm mb-5">
                                 <button
                                     onClick={() => startPlanGeneration('diet')}
                                     className="flex flex-col items-start p-4 bg-white rounded-2xl border-2 border-gray-100 hover:border-green-300 hover:shadow-md shadow-sm transition-all text-left group"
@@ -850,7 +1120,9 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                         <Utensils className="h-5 w-5 text-white" />
                                     </div>
                                     <p className="font-bold text-gray-900 text-sm">Diet Plan</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Personalized meals & macros</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        {healthProfile?.goal_type ? 'Tailored to your goal' : 'Personalized meals & macros'}
+                                    </p>
                                 </button>
                                 <button
                                     onClick={() => startPlanGeneration('workout')}
@@ -860,23 +1132,23 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                         <Dumbbell className="h-5 w-5 text-white" />
                                     </div>
                                     <p className="font-bold text-gray-900 text-sm">Workout Plan</p>
-                                    <p className="text-xs text-gray-500 mt-0.5">Tailored to your goals</p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        {healthProfile?.workout_experience ? `${healthProfile.workout_experience} level` : 'Tailored to your goals'}
+                                    </p>
                                 </button>
                             </div>
 
-                            {/* Quick prompts */}
+                            {/* Curated / quick prompts */}
                             <div className="w-full max-w-sm">
-                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Quick Questions</p>
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                    {healthProfile?.goal_type ? 'Suggested for you' : 'Quick Questions'}
+                                </p>
                                 <div className="flex flex-wrap gap-2 justify-center">
-                                    {[
-                                        'How much protein do I need?',
-                                        'Best exercises for fat loss',
-                                        'Meal timing tips',
-                                    ].map(q => (
+                                    {buildCuratedPrompts(healthProfile).map(q => (
                                         <button
                                             key={q}
                                             onClick={() => setInput(q)}
-                                            className="text-xs px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700 transition-colors"
+                                            className="text-xs px-3 py-1.5 rounded-full bg-white border border-gray-200 text-gray-600 hover:border-orange-300 hover:text-orange-700 transition-colors text-left"
                                         >
                                             {q}
                                         </button>
@@ -923,7 +1195,7 @@ export default function GymnaClient({ user, initialChats, initialCredits }: Gymn
                                         `}
                                     >
                                         {msg.role === 'assistant' ? (
-                                            <AssistantMessage content={msg.content} />
+                                            <AssistantMessage content={msg.content} onPlanAction={startPlanGeneration} />
                                         ) : (
                                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                                         )}
