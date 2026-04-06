@@ -10,12 +10,20 @@ export default async function OnboardingPage() {
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('has_onboarded, name')
+        .select('has_onboarded, name, user_type')
         .eq('id', user.id)
         .single();
 
-    // Already onboarded → skip
-    if (profile?.has_onboarded) redirect('/meals');
+    // Already onboarded → send to appropriate home
+    if (profile?.has_onboarded) {
+        if (profile.user_type === 'trainer') redirect('/trainer');
+        redirect('/dashboard');
+    }
 
-    return <OnboardingClient userName={profile?.name ?? ''} />;
+    return (
+        <OnboardingClient
+            userName={profile?.name ?? ''}
+            userType={(profile?.user_type as 'personal' | 'client' | 'trainer') ?? 'personal'}
+        />
+    );
 }

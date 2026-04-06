@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export type WorkoutSet = {
   id?: string
@@ -256,4 +257,34 @@ export async function saveCustomExercise(name: string) {
         .upsert({ user_id: user.id, name }, { ignoreDuplicates: true })
     
     if (error) console.error('Error saving custom exercise', error)
+}
+
+export async function getWorkoutCoachNote(input: {
+    categoryName: string
+    durationMinutes?: number
+    intensity?: number
+    exercises: { name: string; sets: { reps?: number; weight?: number }[] }[]
+}): Promise<string> {
+    const exerciseSummary = input.exercises
+        .filter(ex => ex.sets.some(s => s.reps || s.weight))
+        .slice(0, 6)
+        .map(ex => {
+            const sets = ex.sets.filter(s => s.reps || s.weight)
+            return `${ex.name}: ${sets.map(s => `${s.reps ?? 0}×${s.weight ?? 0}kg`).join(', ')}`
+        })
+        .join('; ')
+
+    const prompt = `You are a personal fitness coach. A user just logged their workout. Give them one specific, encouraging coaching note (max 2 sentences). Be concrete — reference their actual session. No generic phrases.
+
+Workout: ${input.categoryName}
+Duration: ${input.durationMinutes ? `${input.durationMinutes} min` : 'not specified'}
+Intensity: ${input.intensity ? `${input.intensity}/5` : 'not specified'}
+Exercises: ${exerciseSummary || 'cardio / bodyweight session'}
+
+Reply with ONLY the coaching note — no labels, no quotes, no JSON.`
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const result = await model.generateContent(prompt)
+    return result.response.text().trim()
 }

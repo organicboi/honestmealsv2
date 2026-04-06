@@ -4,12 +4,20 @@ import { getUserHealthProfile } from '@/app/actions/onboarding';
 import { redirect } from 'next/navigation';
 import GymnaClientWrapper from './GymnaClientWrapper';
 
-export default async function AskMePage() {
+export default async function AskMePage({
+    searchParams,
+}: {
+    searchParams: Promise<{ prompt?: string }>;
+}) {
     const { user } = await getUser();
 
     if (!user) {
         redirect('/sign-in');
     }
+
+    // `?prompt=` — pre-fill the input (set from dashboard curated prompts)
+    const params = await searchParams;
+    const initialPrompt = params.prompt ?? null;
 
     let initialChats: any[] = [];
     let initialCredits = 0;
@@ -30,6 +38,7 @@ export default async function AskMePage() {
             initialChats={initialChats}
             initialCredits={initialCredits}
             healthProfile={healthProfile}
+            initialPrompt={initialPrompt}
         />
     );
 }

@@ -6,10 +6,11 @@ import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, MapPin, Phone, User, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Phone, User, FileText, Loader2, BookmarkPlus, Check, X } from 'lucide-react';
 import { placeOrder } from '@/app/actions/orders';
+import { logOrderedMeals } from '@/app/actions/food-logging';
 import type { Profile } from '@/types/database.types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface CheckoutClientProps {
     user: any;
@@ -20,6 +21,10 @@ export default function CheckoutClient({ user, profile }: CheckoutClientProps) {
     const router = useRouter();
     const { items, cartTotalPrice, clearCart } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showLogModal, setShowLogModal] = useState(false);
+    const [pendingUrl, setPendingUrl] = useState('');
+    const [pendingItems, setPendingItems] = useState<{ mealId: string; quantity: number }[]>([]);
+    const [isLogging, setIsLogging] = useState(false);
     
     const [formData, setFormData] = useState({
         name: '',
@@ -148,10 +153,17 @@ ${formData.notes ? `*Notes:* ${formData.notes}` : ''}`;
             const whatsappUrl = `https://wa.me/${businessNumber}?text=${encodedMessage}`;
 
             // Clear cart
+            const itemsToLog = items.map(i => ({ mealId: i.id, quantity: i.quantity }));
+            setPendingItems(itemsToLog);
+            setPendingUrl(whatsappUrl);
             clearCart();
 
-            // Redirect to WhatsApp
-            window.location.href = whatsappUrl;
+            if (user) {
+                setIsSubmitting(false);
+                setShowLogModal(true);
+            } else {
+                window.location.href = whatsappUrl;
+            }
 
         } catch (error) {
             console.error('Error placing order:', error);
@@ -159,9 +171,24 @@ ${formData.notes ? `*Notes:* ${formData.notes}` : ''}`;
         }
     };
 
-    if (items.length === 0) return null;
+    if (items.length === 0 && !showLogModal) return null;
+
+    const completeOrder = async (logMeals: boolean) => {
+        if (logMeals && pendingItems.length > 0) {
+            setIsLogging(true);
+            try {
+                await logOrderedMeals(pendingItems);
+            } catch {
+                // silent — don't block redirect
+            }
+            setIsLogging(false);
+        }
+        setShowLogModal(false);
+        window.location.href = pendingUrl;
+    };
 
     return (
+        <>
         <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl mx-auto">
                 <Button
@@ -261,7 +288,7 @@ ${formData.notes ? `*Notes:* ${formData.notes}` : ''}`;
                                         <textarea
                                             value={formData.notes}
                                             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                                            className="w-full pl-10 p-2 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[80px] text-sm"
+                                            className="w-full pl-10 p-2 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 min-h-20 text-sm"
                                             placeholder="Any special instructions..."
                                         />
                                     </div>
@@ -290,5 +317,60 @@ ${formData.notes ? `*Notes:* ${formData.notes}` : ''}`;
                 </div>
             </div>
         </div>
+
+        {/* Log-to-Tracker Modal */}
+        <AnimatePresence>
+            {showLogModal && (
+                <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+                    />
+                    <motion.div
+                        initial={{ opacity: 0, y: 40, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 40, scale: 0.96 }}
+                        transition={{ type: 'spring', stiffness: 320, damping: 28 }}
+                        className="fixed bottom-0 left-0 right-0 z-50 p-4 pb-8 max-w-md mx-auto"
+                    >
+                        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                            <div className="bg-gray-950 px-6 pt-6 pb-4">
+                                <div className="w-10 h-10 bg-orange-500/20 rounded-2xl flex items-center justify-center mb-3">
+                                    <BookmarkPlus className="w-5 h-5 text-orange-400" />
+                                </div>
+                                <h3 className="text-white font-black text-lg leading-snug">Log to health tracker?</h3>
+                                <p className="text-gray-400 text-sm mt-1 leading-relaxed">
+                                    Add your ordered meals to today&apos;s food log automatically.
+                                </p>
+                            </div>
+                            <div className="p-4 space-y-2.5">
+                                <Button
+                                    onClick={() => completeOrder(true)}
+                                    disabled={isLogging}
+                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-black h-12 rounded-2xl text-sm shadow-lg shadow-orange-200"
+                                >
+                                    {isLogging ? (
+                                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                                    ) : (
+                                        <Check className="w-4 h-4 mr-2" />
+                                    )}
+                                    Yes, log to tracker
+                                </Button>
+                                <button
+                                    onClick={() => completeOrder(false)}
+                                    disabled={isLogging}
+                                    className="w-full h-11 rounded-2xl border border-gray-200 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <X className="w-3.5 h-3.5" /> Skip
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+        </>
     );
 }

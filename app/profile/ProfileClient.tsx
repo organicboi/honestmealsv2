@@ -16,6 +16,8 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { signout } from '@/app/actions/auth';
 import { updateProfileAction } from '@/app/actions/profile';
+import { acceptTrainerInvite } from '@/app/actions/trainer';
+import { toast } from 'sonner';
 import type { ProfileWithStats, GoalType, FoodType, ActivityLevel } from '@/types/database.types';
 
 interface ProfileClientProps {
@@ -29,6 +31,8 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
     const router = useRouter();
     const [currentView, setCurrentView] = useState<ViewState>('main');
     const [isSaving, setIsSaving] = useState(false);
+    const [trainerCode, setTrainerCode] = useState('');
+    const [joiningTrainer, setJoiningTrainer] = useState(false);
 
     const [formData, setFormData] = useState({
         name: profile?.name || '',
@@ -466,6 +470,44 @@ export default function ProfileClient({ user, profile }: ProfileClientProps) {
                         </button>
                     </div>
                 </div>
+
+                {/* Connect to a Trainer — only for non-trainers */}
+                {profile?.user_type !== 'trainer' && (
+                    <div className="space-y-2">
+                        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider px-2">Trainer</h2>
+                        <div className="bg-white rounded-2xl shadow-sm p-4">
+                            {profile?.user_type === 'client' ? (
+                                <p className="text-sm text-green-600 font-semibold">✓ You are connected to a trainer</p>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-gray-600 mb-3">Have a trainer invite code? Enter it below to connect.</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            value={trainerCode}
+                                            onChange={e => setTrainerCode(e.target.value.toUpperCase())}
+                                            placeholder="e.g. A1B2C3D4"
+                                            maxLength={8}
+                                            className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm font-mono tracking-widest focus:outline-none focus:border-orange-400"
+                                        />
+                                        <button
+                                            disabled={joiningTrainer || trainerCode.length < 6}
+                                            onClick={async () => {
+                                                setJoiningTrainer(true);
+                                                const res = await acceptTrainerInvite(trainerCode);
+                                                setJoiningTrainer(false);
+                                                if (res?.error) { toast.error(res.error); return; }
+                                                toast.success('Connected to trainer!');
+                                                setTrainerCode('');
+                                            }}
+                                            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors disabled:opacity-50">
+                                            {joiningTrainer ? '…' : 'Join'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 <div className="text-center text-xs text-gray-400 py-4">
                     Version 2.0.1 • Honest Meals

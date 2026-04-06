@@ -8,6 +8,7 @@ import { CartProvider } from "@/context/CartContext";
 import { NavVisibilityProvider } from "@/context/NavVisibilityContext";
 import { Toaster } from "sonner";
 import AddToHomeScreen from "@/components/pwa/AddToHomeScreen";
+import QuickLogFAB from "@/components/navigation/QuickLogFAB";
 import { createClient } from "@/utils/supabase/server";
 import { getProfile, getUserRole } from "@/lib/database/profiles";
 
@@ -58,6 +59,7 @@ export default async function RootLayout({
             <TopNavClient user={user} profile={profile} />
             <LayoutBody>{children}</LayoutBody>
             {user && <BottomNav userRole={userRole ?? undefined} />}
+            {user && <QuickLogFAB />}
           </NavVisibilityProvider>
           <AddToHomeScreen />
           <Toaster />

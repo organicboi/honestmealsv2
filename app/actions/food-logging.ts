@@ -195,3 +195,51 @@ export async function updateFoodLog(logId: string, input: LogFoodInput) {
   revalidatePath('/health')
   revalidatePath('/health/log-food')
 }
+
+export async function logOrderedMeals(
+  orderedItems: { mealId: string; quantity: number }[]
+): Promise<void> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) throw new Error('Unauthorized')
+
+  const mealIds = orderedItems.map(i => i.mealId)
+  const { data: meals, error } = await supabase
+    .from('meals')
+    .select('id, name, calories, protein, carbs, fat')
+    .in('id', mealIds)
+
+  if (error || !meals) return
+
+  const hour = new Date().getHours()
+  let mealType: LogFoodInput['meal_type'] = 'lunch'
+  if (hour < 10) mealType = 'breakfast'
+  else if (hour < 14) mealType = 'lunch'
+  else if (hour < 18) mealType = 'snack'
+  else mealType = 'dinner'
+
+  const today = new Date().toISOString().split('T')[0]
+  const mealMap = new Map(meals.map(m => [m.id, m]))
+
+  for (const item of orderedItems) {
+    const meal = mealMap.get(item.mealId)
+    if (!meal) continue
+    await supabase.from('food_logs').insert({
+      user_id: user.id,
+      meal_id: item.mealId,
+      custom_food_name: null,
+      quantity: item.quantity,
+      calories: (meal.calories ?? 0) * item.quantity,
+      protein: (meal.protein ?? 0) * item.quantity,
+      carbs: (meal.carbs ?? 0) * item.quantity,
+      fat: (meal.fat ?? 0) * item.quantity,
+      meal_type: mealType,
+      log_date: today,
+    })
+  }
+
+  revalidatePath('/health')
+}

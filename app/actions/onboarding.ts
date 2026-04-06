@@ -110,6 +110,61 @@ export async function saveOnboardingProfile(data: OnboardingData) {
     return { success: true };
 }
 
+// ── Trainer onboarding ────────────────────────────────────────────────────────
+
+export interface TrainerOnboardingData {
+    name: string;
+    phone?: string;
+    specialties: string[];
+    experience_years: number;
+    certification?: string;
+    bio?: string;
+    commission_rate: number;
+}
+
+export async function saveTrainerOnboardingProfile(data: TrainerOnboardingData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: 'Not authenticated' };
+
+    // Compose bio: include specialties + experience if user provided them
+    const composedBio = [
+        data.bio?.trim(),
+        data.specialties.length ? `Specialties: ${data.specialties.join(', ')}.` : '',
+        +data.experience_years > 0 ? `Experience: ${data.experience_years} years.` : '',
+    ].filter(Boolean).join('\n\n') || null;
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({
+            name:                      data.name,
+            phone_number:              data.phone ?? null,
+            trainer_certification:     data.certification ?? null,
+            trainer_bio:               composedBio,
+            trainer_commission_rate:   data.commission_rate,
+            user_type:                 'trainer',
+            has_onboarded:             true,
+            onboarding_completed_at:   new Date().toISOString(),
+            updated_at:                new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+    if (error) {
+        console.error('saveTrainerOnboardingProfile error:', error);
+        return { error: error.message };
+    }
+
+    // Fetch the generated invite code to return to the client
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('trainer_invite_code')
+        .eq('id', user.id)
+        .single();
+
+    revalidatePath('/');
+    return { success: true, invite_code: profile?.trainer_invite_code ?? '' };
+}
+
 // ── Read helper used by honestask and other features ─────────────────────────
 
 export async function getUserHealthProfile() {

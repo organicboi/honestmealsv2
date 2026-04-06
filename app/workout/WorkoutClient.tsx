@@ -16,7 +16,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from "sonner";
 import { 
     getWorkoutLogs, saveWorkoutLog, deleteWorkoutLog, 
-    getCustomExercises, saveCustomExercise, 
+    getCustomExercises, saveCustomExercise, getWorkoutCoachNote,
     type WorkoutLog 
 } from '@/app/actions/workout';
 
@@ -153,6 +153,10 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
     // Custom Exercise Input State
     const [newCustomExerciseName, setNewCustomExerciseName] = useState('');
     const [isAddingCustomExercise, setIsAddingCustomExercise] = useState(false);
+
+    // AI Coach Note
+    const [coachNote, setCoachNote] = useState<string | null>(null);
+    const [showCoachNote, setShowCoachNote] = useState(false);
 
     // Fetch Data
     const fetchData = async () => {
@@ -309,9 +313,28 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                 }))
             });
 
-            toast.success("Workout saved successfully!");
-            fetchData(); // Refresh data
+            toast.success("Workout saved!");
+            fetchData();
             setIsModalOpen(false);
+
+            // Trigger AI coach note
+            const categoryLabel = workoutCategories.find(c => c.id === currentLog.category)?.label
+                ?? currentLog.customCategoryName
+                ?? 'Workout';
+            setCoachNote(null);
+            setShowCoachNote(true);
+            getWorkoutCoachNote({
+                categoryName: categoryLabel,
+                durationMinutes: currentLog.duration ? parseInt(currentLog.duration) : undefined,
+                intensity: currentLog.intensity,
+                exercises: currentLog.exercises.map(ex => ({
+                    name: ex.name,
+                    sets: ex.sets.map(s => ({
+                        reps: s.reps ? parseInt(s.reps) : undefined,
+                        weight: s.weight ? parseFloat(s.weight) : undefined,
+                    }))
+                }))
+            }).then(note => setCoachNote(note)).catch(() => setShowCoachNote(false));
         } catch (error) {
             console.error("Error saving workout:", error);
             toast.error("An error occurred while saving");
@@ -655,7 +678,7 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: '100%' }}
                             transition={{ type: "spring", damping: 25, stiffness: 500 }}
-                            className="fixed inset-0 z-[60] bg-white flex flex-col md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-2xl md:h-[85vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden"
+                            className="fixed inset-0 z-60 bg-white flex flex-col md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-full md:max-w-2xl md:h-[85vh] md:rounded-3xl md:shadow-2xl md:overflow-hidden"
                         >
                             {/* Modal Header */}
                             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/80 backdrop-blur-md sticky top-0 z-10">
@@ -853,7 +876,7 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                                             </div>
 
                                             <textarea
-                                                className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm min-h-[80px]"
+                                                className="w-full p-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm min-h-20"
                                                 placeholder="How did it feel? Any pain or PRs?"
                                                 value={currentLog.notes}
                                                 onChange={(e) => setCurrentLog(prev => ({ ...prev, notes: e.target.value }))}
@@ -876,6 +899,43 @@ export default function WorkoutClient({ user }: WorkoutClientProps) {
                             </div>
                         </motion.div>
                     </>
+                )}
+            </AnimatePresence>
+
+            {/* ── AI Coach Note ── */}
+            <AnimatePresence>
+                {showCoachNote && (
+                    <motion.div
+                        initial={{ y: 120, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 120, opacity: 0 }}
+                        transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+                        className="fixed bottom-20 left-4 right-4 z-50 max-w-md mx-auto"
+                    >
+                        <div className="bg-gray-950 text-white rounded-3xl p-4 shadow-2xl border border-orange-500/20">
+                            <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-orange-500/20 rounded-full flex items-center justify-center shrink-0 mt-0.5">
+                                    <Sparkles className="w-4 h-4 text-orange-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5">Coach's Note</p>
+                                    {coachNote
+                                        ? <p className="text-sm text-gray-200 leading-relaxed">{coachNote}</p>
+                                        : <div className="space-y-1.5">
+                                            <div className="h-3 bg-gray-800 rounded-full animate-pulse w-full" />
+                                            <div className="h-3 bg-gray-800 rounded-full animate-pulse w-4/5" />
+                                        </div>
+                                    }
+                                </div>
+                                <button
+                                    onClick={() => setShowCoachNote(false)}
+                                    className="p-1 text-gray-600 hover:text-white transition-colors shrink-0"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

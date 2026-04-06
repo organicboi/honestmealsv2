@@ -17,10 +17,10 @@ interface NavItem {
 
 // Base navigation items available to ALL users
 const baseNavItems: NavItem[] = [
-    { label: 'Meals', href: '/meals', icon: Utensils },
-    { label: 'Health', href: '/health', icon: Activity },
-    { label: 'Workout', href: '/workout', icon: Dumbbell },
-    { label: 'Ask', href: '/honestask', icon: MessageSquare },
+    { label: 'Home',    href: '/dashboard', icon: LayoutDashboard },
+    { label: 'Meals',   href: '/meals',     icon: Utensils },
+    { label: 'Workout', href: '/workout',   icon: Dumbbell },
+    { label: 'Ask AI',  href: '/honestask', icon: MessageSquare },
 ];
 
 // Role-specific navigation items (shown in addition to base items)
@@ -33,8 +33,8 @@ const roleSpecificNavItems: Partial<Record<UserRole, NavItem[]>> = {
     ],
     
     trainer: [
-        // { label: 'Dashboard', href: '/trainer', icon: LayoutDashboard },
-        // { label: 'Clients', href: '/trainer/clients', icon: Users },
+        { label: 'My Clients', href: '/trainer/clients', icon: Users },
+        { label: 'Earnings',   href: '/trainer/commissions', icon: TrendingUp },
     ],
     
     gym_franchise: [
@@ -158,7 +158,7 @@ export default function BottomNav({ userRole = 'standard_user' }: BottomNavProps
                             {isActive && (
                                 <motion.div
                                     layoutId="bottomNavIndicator"
-                                    className="absolute -top-[1px] w-12 h-1 bg-green-600 rounded-b-full"
+                                    className="absolute -top-px w-12 h-1 bg-green-600 rounded-b-full"
                                     transition={{ type: "spring", stiffness: 500, damping: 30 }}
                                 />
                             )}

@@ -99,6 +99,14 @@ export interface Profile {
   daily_water_goal_ml: number | null;
   bmr: number | null;
   tdee: number | null;
+  // Trainer feature fields (migration 014)
+  user_type: 'personal' | 'trainer' | 'client' | null;
+  trainer_bio: string | null;
+  trainer_certification: string | null;
+  trainer_commission_rate: number | null;
+  trainer_invite_code: string | null;
+  trainer_specialties: string[] | null;
+  trainer_years_experience: number | null;
 }
 
 export interface Meal {

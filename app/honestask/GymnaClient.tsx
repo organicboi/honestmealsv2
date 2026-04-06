@@ -237,6 +237,7 @@ interface GymnaClientProps {
     initialChats: Chat[];
     initialCredits: number;
     healthProfile?: any;
+    initialPrompt?: string | null;
 }
 
 // ─── Profile → curated prompts ──────────────────────────────────────────────
@@ -359,12 +360,12 @@ function buildPrefillFromProfile(planType: PlanType, profile: any): Record<strin
 }
 
 
-export default function GymnaClient({ user, initialChats, initialCredits, healthProfile }: GymnaClientProps) {
+export default function GymnaClient({ user, initialChats, initialCredits, healthProfile, initialPrompt }: GymnaClientProps) {
     const [chats, setChats] = useState<Chat[]>(initialChats);
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [planData, setPlanData] = useState<PlanDataItem[]>([]);
-    const [input, setInput] = useState('');
+    const [input, setInput] = useState(initialPrompt ?? '');
     const [credits, setCredits] = useState(initialCredits);
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);

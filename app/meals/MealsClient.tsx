@@ -4,8 +4,10 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Star, X, Plus, Minus,
-    ArrowRight, Wind,
+    ArrowRight, Wind, Check, BookmarkPlus,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { logFood } from '@/app/actions/food-logging';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -106,15 +108,45 @@ function MacroBar({ protein, carbs, fat }: { protein: number; carbs?: number | n
     );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function getMealType(hour: number): 'breakfast' | 'lunch' | 'snack' | 'dinner' {
+    if (hour < 10) return 'breakfast';
+    if (hour < 14) return 'lunch';
+    if (hour < 18) return 'snack';
+    return 'dinner';
+}
+
 // ─── Meal Card ─────────────────────────────────────────────────────────────────
 function MealCard({
-    meal, cartQty, onAdd, onRemove,
+    meal, cartQty, onAdd, onRemove, profile, onLogMeal,
 }: {
     meal: MealWithDetails; cartQty: number; onAdd: () => void; onRemove: () => void;
+    profile?: Profile | null; onLogMeal?: () => void;
 }) {
     const hero = getHeroMetric(meal);
     const hs = HERO_STYLES[hero.type];
     const isAirFried = (meal as any).is_air_fried ?? false;
+
+    // Macro fit badge
+    const calGoal = profile?.daily_calorie_goal;
+    const calVal = meal.calories ?? 0;
+    let macroFitBadge: React.ReactNode = null;
+    if (calGoal && calVal > 0) {
+        const ratio = calVal / calGoal;
+        if (ratio < 0.3) {
+            macroFitBadge = (
+                <div className="flex items-center gap-0.5 text-[9px] font-black text-green-700 bg-green-50 border border-green-100 px-1.5 py-0.5 rounded-full">
+                    <Check className="w-2.5 h-2.5" /> Goal
+                </div>
+            );
+        } else if (ratio > 0.55) {
+            macroFitBadge = (
+                <div className="text-[9px] font-black text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">
+                    ⚡ Heavy
+                </div>
+            );
+        }
+    }
 
     return (
         <motion.div
@@ -199,6 +231,22 @@ function MealCard({
 
                 {/* Macro Bar */}
                 <MacroBar protein={meal.protein} carbs={meal.carbs} fat={meal.fat} />
+
+                {/* Macro fit badge + Log button */}
+                {(macroFitBadge || onLogMeal) && (
+                    <div className="flex items-center justify-between gap-2">
+                        <div>{macroFitBadge}</div>
+                        {onLogMeal && (
+                            <button
+                                onClick={onLogMeal}
+                                title="Log to health tracker"
+                                className="p-1.5 rounded-xl border border-dashed border-gray-200 text-gray-400 hover:border-orange-300 hover:text-orange-500 hover:bg-orange-50 transition-all active:scale-95 shrink-0"
+                            >
+                                <BookmarkPlus className="w-3 h-3" />
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Price + Action */}
                 <div className="flex items-center justify-between pt-2 border-t border-gray-100 mt-auto">
@@ -290,6 +338,26 @@ export default function MealsClient({
     const addToCart = useCallback((meal: MealWithDetails) => {
         ctxAdd({ id: meal.id, name: meal.name, price: meal.price, image_url: meal.image_url, description: meal.description, food_type: meal.food_type });
     }, [ctxAdd]);
+
+    const handleLogMeal = useCallback(async (meal: MealWithDetails) => {
+        const hour = new Date().getHours();
+        const today = new Date().toISOString().split('T')[0];
+        try {
+            await logFood({
+                meal_id: meal.id,
+                quantity: 1,
+                calories: meal.calories ?? 0,
+                protein: meal.protein ?? 0,
+                carbs: meal.carbs ?? 0,
+                fat: meal.fat ?? 0,
+                meal_type: getMealType(hour),
+                date: today,
+            });
+            toast.success(`${meal.name} logged! 🎯`);
+        } catch {
+            toast.error('Could not log meal');
+        }
+    }, []);
 
     const getQty = (id: string) => cartItems.find(i => i.id === id)?.quantity ?? 0;
 
@@ -480,6 +548,8 @@ export default function MealsClient({
                                     cartQty={getQty(meal.id)}
                                     onAdd={() => addToCart(meal)}
                                     onRemove={() => ctxRemove(meal.id)}
+                                    profile={profile}
+                                    onLogMeal={() => handleLogMeal(meal)}
                                 />
                             </motion.div>
                         ))}

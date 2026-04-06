@@ -20,6 +20,25 @@ CREATE TABLE public.app_roles (
   description text,
   CONSTRAINT app_roles_pkey PRIMARY KEY (id)
 );
+CREATE TABLE public.body_measurements (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  weight_kg numeric,
+  body_fat_pct numeric,
+  muscle_mass_kg numeric,
+  bmi numeric,
+  waist_cm numeric,
+  chest_cm numeric,
+  arms_cm numeric,
+  hips_cm numeric,
+  thighs_cm numeric,
+  neck_cm numeric,
+  measured_at date NOT NULL DEFAULT CURRENT_DATE,
+  notes text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT body_measurements_pkey PRIMARY KEY (id),
+  CONSTRAINT body_measurements_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
 CREATE TABLE public.challenge_participation (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   challenge_id uuid NOT NULL,
@@ -253,24 +272,24 @@ CREATE TABLE public.gym_partnerships (
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT gym_partnerships_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.Honest Ask_chats (
+CREATE TABLE public.gymna_chats (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   title text NOT NULL,
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT Honest Ask_chats_pkey PRIMARY KEY (id),
-  CONSTRAINT Honest Ask_chats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
+  CONSTRAINT gymna_chats_pkey PRIMARY KEY (id),
+  CONSTRAINT gymna_chats_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id)
 );
-CREATE TABLE public.Honest Ask_messages (
+CREATE TABLE public.gymna_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   chat_id uuid NOT NULL,
   role text NOT NULL CHECK (role = ANY (ARRAY['user'::text, 'assistant'::text])),
   content text NOT NULL,
   type text DEFAULT 'text'::text,
   created_at timestamp with time zone DEFAULT now(),
-  CONSTRAINT Honest Ask_messages_pkey PRIMARY KEY (id),
-  CONSTRAINT Honest Ask_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.Honest Ask_chats(id)
+  CONSTRAINT gymna_messages_pkey PRIMARY KEY (id),
+  CONSTRAINT gymna_messages_chat_id_fkey FOREIGN KEY (chat_id) REFERENCES public.gymna_chats(id)
 );
 CREATE TABLE public.health_metrics (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -565,7 +584,24 @@ CREATE TABLE public.profiles (
   goal_weight double precision,
   pincode text CHECK (pincode IS NULL OR pincode ~ '^[1-9][0-9]{5}$'::text),
   delivery_address_verified boolean DEFAULT false,
-  Honest Ask_credits integer DEFAULT 10,
+  gymna_credits integer DEFAULT 10,
+  gender text CHECK (gender = ANY (ARRAY['male'::text, 'female'::text, 'other'::text])),
+  preferred_cuisine text DEFAULT 'Mixed'::text,
+  workout_experience text DEFAULT 'beginner'::text CHECK (workout_experience = ANY (ARRAY['beginner'::text, 'intermediate'::text, 'advanced'::text])),
+  workout_equipment text DEFAULT 'Full Gym'::text,
+  workout_days_per_week integer DEFAULT 3 CHECK (workout_days_per_week >= 1 AND workout_days_per_week <= 7),
+  workout_session_duration text DEFAULT '60 minutes'::text,
+  workout_focus_areas ARRAY DEFAULT '{}'::text[],
+  injuries_limitations text,
+  daily_water_goal_ml integer DEFAULT 2500,
+  bmr numeric,
+  tdee numeric,
+  goal_target_date date,
+  waist_cm numeric,
+  neck_cm numeric,
+  hip_cm numeric,
+  profile_completeness integer DEFAULT 0,
+  user_timezone text DEFAULT 'Asia/Kolkata'::text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
   CONSTRAINT profiles_referred_by_fkey FOREIGN KEY (referred_by) REFERENCES auth.users(id)
@@ -707,6 +743,44 @@ CREATE TABLE public.serviceable_pincodes (
   created_at timestamp with time zone DEFAULT now(),
   updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT serviceable_pincodes_pkey PRIMARY KEY (id)
+);
+CREATE TABLE public.strava_activities (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  strava_id bigint NOT NULL UNIQUE,
+  name text,
+  sport_type text,
+  start_date timestamp with time zone,
+  distance double precision,
+  moving_time integer,
+  elapsed_time integer,
+  total_elevation_gain double precision,
+  average_speed double precision,
+  max_speed double precision,
+  average_heartrate double precision,
+  max_heartrate double precision,
+  calories double precision,
+  kudos_count integer,
+  achievement_count integer,
+  map_polyline text,
+  raw_json jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT strava_activities_pkey PRIMARY KEY (id),
+  CONSTRAINT strava_activities_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.strava_integrations (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE,
+  athlete_id bigint NOT NULL,
+  access_token text NOT NULL,
+  refresh_token text NOT NULL,
+  expires_at bigint NOT NULL,
+  scope text,
+  athlete_json jsonb,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT strava_integrations_pkey PRIMARY KEY (id),
+  CONSTRAINT strava_integrations_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.subscription_meals (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),

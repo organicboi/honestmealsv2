@@ -31,11 +31,6 @@ export async function getProfileWithStats(userId: string) {
         status,
         created_at
       ),
-      reviews (
-        id,
-        rating,
-        created_at
-      ),
       favorites (
         id,
         meal_id

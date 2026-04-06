@@ -5,7 +5,7 @@ import { updateUserStreak } from '@/lib/utils/streak';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/meals';
+  const next = searchParams.get('next') ?? '/dashboard';
 
   if (code) {
     const supabase = await createClient();
@@ -19,11 +19,18 @@ export async function GET(request: Request) {
         // Check if user has completed onboarding
         const { data: profile } = await supabase
           .from('profiles')
-          .select('has_onboarded')
+          .select('has_onboarded, user_type')
           .eq('id', user.id)
           .single();
 
-        const destination = profile?.has_onboarded ? next : '/onboarding';
+        let destination: string;
+        if (!profile?.has_onboarded) {
+          destination = '/onboarding';
+        } else if (profile?.user_type === 'trainer') {
+          destination = '/trainer';
+        } else {
+          destination = next;
+        }
 
         const forwardedHost = request.headers.get('x-forwarded-host');
         const isLocalEnv = process.env.NODE_ENV === 'development';
